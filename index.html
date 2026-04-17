@@ -1731,7 +1731,7 @@
       }catch(e){}
     }
 
-    function setupMediaSession(){
+    function bindMediaSessionActions(){
       if(!hasMediaSessionSupport()) return;
       setMediaSessionHandler('play',()=>{
         if(dom.audio && dom.audio.src) dom.audio.play().catch(()=>{});
@@ -1741,10 +1741,18 @@
       });
       setMediaSessionHandler('previoustrack',()=>playNext('prev'));
       setMediaSessionHandler('nexttrack',()=>playNext('next'));
+      // iOS Safari 会在某些情况下优先显示 10 秒快进/快退，这里显式清空对应动作。
+      setMediaSessionHandler('seekbackward',null);
+      setMediaSessionHandler('seekforward',null);
       setMediaSessionHandler('stop',()=>{
         dom.audio.pause();
         dom.audio.currentTime=0;
       });
+    }
+
+    function setupMediaSession(){
+      if(!hasMediaSessionSupport()) return;
+      bindMediaSessionActions();
       updateMediaSessionMetadata();
       updateMediaSessionPlaybackState();
       updateMediaSessionPositionState();
@@ -2946,6 +2954,13 @@
         dom.playBtn.textContent='⏸';
         dom.playerStatus.textContent=t('playerStatusPlaying');
         updateMediaSessionPlaybackState();
+      });
+      dom.audio.addEventListener('playing',()=>{
+        // iOS 上在真正开始播放后再注册一次，锁屏更容易出现上一首/下一首。
+        bindMediaSessionActions();
+        updateMediaSessionMetadata();
+        updateMediaSessionPlaybackState();
+        updateMediaSessionPositionState();
       });
       dom.audio.addEventListener('pause',()=>{
         state.isPlaying=false;
