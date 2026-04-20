@@ -59,15 +59,9 @@
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
 
-    /* 背景粒子画布 */
+    /* 背景粒子已停用，避免移动端持续重绘发热 */
     #bg-canvas {
-      position: fixed;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 0;
-      pointer-events: none;
-      background: var(--app-shell-bg);
+      display: none;
     }
 
     /* 主容器：四周留白 */
@@ -728,45 +722,11 @@
       position:relative;
       box-shadow:0 12px 32px rgba(0,0,0,0.9);
     }
-    .lyrics-container::before,
-    .lyrics-container::after {
-      content:"";
-      position:absolute;
-      pointer-events:none;
-      mix-blend-mode:screen;
-    }
-    .lyrics-container::before {
-      inset:-25%;
-      background:conic-gradient(
-        from 0deg,
-        rgba(255,214,102,0.08),
-        rgba(255,214,102,0.38),
-        rgba(104,184,255,0.38),
-        rgba(186,132,255,0.40),
-        rgba(255,214,102,0.08)
-      );
-      opacity:0.46;
-      filter:blur(14px);
-      animation: lyricsGlow 16s linear infinite;
-    }
-    @keyframes lyricsGlow { to { transform:rotate(360deg);} }
-    .lyrics-container::after {
-      display:none;
-    }
-    @keyframes lyricsSweep {
-      0% { transform:translateX(-130%); }
-      50%{ transform:translateX(40%); }
-      100%{ transform:translateX(130%); }
-    }
-    .lyrics-container.alt-style::before {
-      background:conic-gradient(
-        from 0deg,
-        rgba(104,184,255,0.14),
-        rgba(186,132,255,0.40),
-        rgba(255,214,102,0.32),
-        rgba(104,184,255,0.46),
-        rgba(186,132,255,0.40)
-      );
+    .lyrics-container.alt-style {
+      background:
+        radial-gradient(circle at 50% 0, rgba(120,195,255,0.18), transparent 60%),
+        radial-gradient(circle at 10% 100%, rgba(186,132,255,0.16), transparent 60%),
+        rgba(4,6,20,0.72);
     }
     .lyrics-inner {
       position:relative;
@@ -2287,9 +2247,6 @@
       dom.searchCount.textContent=state.searchResults.length.toString();
       renderMiniSearchList();
       renderPlaylistList();
-      if(!state.currentTrack && state.searchResults.length){
-        playFromList('results',0);
-      }
       if(!reset){
         if(added===0){state.noMoreResults=true;showToast(t('toastNoMore'));}
         else state.noMoreResults=false;
@@ -2796,6 +2753,38 @@
       }
     }
 
+    function keepPlayingItemVisible(item){
+      const panel=dom.playlistPanel;
+      const main=dom.playlistMain;
+      if(!item || !main) return;
+
+      // `scrollIntoView()` 在移动端会把整个面板一起滚走，导致顶部栏消失。
+      if(panel && panel.scrollTop!==0){
+        panel.scrollTop=0;
+      }
+
+      const mainRect=main.getBoundingClientRect();
+      const itemRect=item.getBoundingClientRect();
+      const stickyOffset=(dom.playlistBar?.offsetHeight||0)+8;
+      const viewTop=mainRect.top+stickyOffset;
+      const viewBottom=mainRect.bottom-8;
+
+      let nextTop=main.scrollTop;
+      if(itemRect.top<viewTop){
+        nextTop-=viewTop-itemRect.top;
+      }else if(itemRect.bottom>viewBottom){
+        nextTop+=itemRect.bottom-viewBottom;
+      }else{
+        return;
+      }
+
+      const behavior=window.matchMedia('(max-width: 860px)').matches ? 'auto' : 'smooth';
+      main.scrollTo({
+        top:Math.max(0,nextTop),
+        behavior
+      });
+    }
+
     function renderPlaylistList(){
       const wrap=dom.playlistList;
       wrap.innerHTML='';
@@ -2890,7 +2879,7 @@
 
       const playingEl=wrap.querySelector('.track-item.playing');
       if(playingEl){
-        playingEl.scrollIntoView({block:'center',behavior:'smooth'});
+        keepPlayingItemVisible(playingEl);
       }
     }
 
@@ -2941,67 +2930,7 @@
     // ===================== 背景粒子 & 水波纹 =====================
 
     function setupParticles(){
-      const canvas=$('bg-canvas');const ctx=canvas.getContext('2d');
-      function resize(){
-        const dpr=window.devicePixelRatio||1;
-        canvas.width=window.innerWidth*dpr;
-        canvas.height=window.innerHeight*dpr;
-        ctx.setTransform(dpr,0,0,dpr,0,0);
-      }
-      resize();window.addEventListener('resize',resize);
-      const parts=[];
-      const N=90;
-      for(let i=0;i<N;i++){
-        parts.push({
-          x:Math.random()*window.innerWidth,
-          y:Math.random()*window.innerHeight,
-          vx:(Math.random()-0.5)*0.4,
-          vy:(Math.random()-0.5)*0.4,
-          r:1+Math.random()*2.5,
-          baseR:1+Math.random()*2.5,
-          hue:200+Math.random()*120,
-          a:0.22+Math.random()*0.3
-        });
-      }
-      let mouse={x:window.innerWidth/2,y:window.innerHeight/2};
-      window.addEventListener('mousemove',e=>{mouse.x=e.clientX;mouse.y=e.clientY;});
-      function tick(){
-        ctx.clearRect(0,0,window.innerWidth,window.innerHeight);
-        const pulse = 1 + audioLevel * 2.2;
-        for(const p of parts){
-          p.x+=p.vx; p.y+=p.vy; p.hue+=0.08;
-          if(p.x<-40)p.x=window.innerWidth+40;
-          if(p.x>window.innerWidth+40)p.x=-40;
-          if(p.y<-40)p.y=window.innerHeight+40;
-          if(p.y>window.innerHeight+40)p.y=-40;
-          const dx=p.x-mouse.x,dy=p.y-mouse.y;
-          const dist=Math.sqrt(dx*dx+dy*dy);
-          const push=Math.max(0,140-dist)/140;
-          p.x+=dx*0.011*push; p.y+=dy*0.011*push;
-          ctx.beginPath();
-          ctx.arc(p.x,p.y,p.baseR*pulse,0,Math.PI*2);
-          const light = Math.min(80, 60 + audioLevel*40);
-          ctx.fillStyle=`hsla(${p.hue},70%,${light}%,${p.a})`;
-          ctx.fill();
-        }
-        ctx.lineWidth=0.45;
-        for(let i=0;i<parts.length;i++){
-          for(let j=i+1;j<parts.length;j++){
-            const a=parts[i],b=parts[j];
-            const dx=a.x-b.x,dy=a.y-b.y;
-            const d=Math.sqrt(dx*dx+dy*dy);
-            if(d<100){
-              const al=0.10*(1-d/100)*(0.6+audioLevel*1.5);
-              ctx.beginPath();
-              ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);
-              ctx.strokeStyle=`rgba(120,160,255,${al})`;
-              ctx.stroke();
-            }
-          }
-        }
-        requestAnimationFrame(tick);
-      }
-      tick();
+      return;
     }
 
     // ===================== DOM / 事件绑定 =====================
@@ -3037,7 +2966,9 @@
       dom.lyricsInner=$('lyrics-inner');
       dom.lyricsContainer=document.querySelector('.lyrics-container');
 
+      dom.playlistPanel=document.querySelector('.playlist-panel');
       dom.playlistMain=document.querySelector('.playlist-main');
+      dom.playlistBar=document.querySelector('.playlist-bar');
       dom.playlistList=$('playlist-list');
       dom.playlistInfo=$('playlist-info');
       dom.playlistSelectRow=$('playlist-select-row');
@@ -3196,8 +3127,6 @@
             if(state.playlists.length&&!state.playContext.playlistId)state.playContext.playlistId=state.playlists[0].id;
           }
           renderPlaylistList();
-          const list=getActiveList();
-          if(!state.currentTrack && list.length) playFromList(state.playContext.type,0,state.playContext.playlistId);
         });
       });
 
