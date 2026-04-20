@@ -1176,7 +1176,7 @@
             <span class="icon">🔍</span>
             <span data-i18n="searchTitle">歌曲搜索</span>
           </div>
-          <span class="chip" data-i18n="searchSubtitle">支持咪咕 / 网易云 / QQ / 酷我</span>
+          <span class="chip" data-i18n="searchSubtitle">支持网易云 / QQ / 酷我 / 咪咕</span>
         </div>
         <div class="search-panel-content">
           <div class="search-row ripple-target">
@@ -1187,11 +1187,6 @@
           </div>
 
           <div class="source-row">
-            <label class="source-chip ripple-target">
-              <span class="source-dot migu"></span>
-              <input type="checkbox" data-source="migu" checked />
-              <span>咪咕</span>
-            </label>
             <label class="source-chip ripple-target">
               <span class="source-dot netease"></span>
               <input type="checkbox" data-source="netease" checked />
@@ -1206,6 +1201,11 @@
               <span class="source-dot kuwo"></span>
               <input type="checkbox" data-source="kuwo" checked />
               <span>酷我</span>
+            </label>
+            <label class="source-chip ripple-target">
+              <span class="source-dot migu"></span>
+              <input type="checkbox" data-source="migu" checked />
+              <span>咪咕</span>
             </label>
           </div>
 
@@ -1437,7 +1437,7 @@
         shortcutFocusSearch:"聚焦搜索框",
         shortcutCloseModal:"提示：按 Esc 可以关闭弹窗。",
         searchTitle:"歌曲搜索",
-        searchSubtitle:"支持咪咕 / 网易云 / QQ / 酷我",
+        searchSubtitle:"支持网易云 / QQ / 酷我 / 咪咕",
         searchButton:"搜索",
         perSourceCount:"每个源加载",
         perSourceCountTail:"首结果",
@@ -1514,7 +1514,7 @@
         shortcutFocusSearch:"Focus on search box",
         shortcutCloseModal:"Tip: press Esc to close dialogs.",
         searchTitle:"Search",
-        searchSubtitle:"Supports Migu / Netease / QQ / Kuwo",
+        searchSubtitle:"Supports Netease / QQ / Kuwo / Migu",
         searchButton:"Search",
         perSourceCount:"Per source",
         perSourceCountTail:"results",
@@ -1577,9 +1577,18 @@
       }
     };
 
+    const SOURCE_ORDER = ['netease','qq','kuwo','migu'];
+
+    function getDefaultEnabledSources(){
+      return SOURCE_ORDER.reduce((acc,source)=>{
+        acc[source]=true;
+        return acc;
+      },{});
+    }
+
     const state = {
       language:'zh',
-      enabledSources:{migu:true, netease:true, qq:true, kuwo:true},
+      enabledSources:getDefaultEnabledSources(),
       perSourceLimit:10,
       perSourceCurrentLimit:{migu:10, netease:10, qq:10, kuwo:10},
       perSourcePage:{migu:1, netease:1, qq:1, kuwo:1},
@@ -1606,6 +1615,7 @@
     let audioLevel = 0;
     const STORAGE_KEYS = {
       language:'pikachu-music-lang',
+      enabledSources:'pikachu-music-enabled-sources',
       favorites:'pikachu-music-favorites',
       playlists:'pikachu-music-playlists'
     };
@@ -1704,7 +1714,33 @@
       );
     }
 
+    function normalizeEnabledSources(raw){
+      const enabledSources=getDefaultEnabledSources();
+      if(!raw || typeof raw!=='object' || Array.isArray(raw)) return enabledSources;
+      SOURCE_ORDER.forEach(source=>{
+        if(typeof raw[source]==='boolean'){
+          enabledSources[source]=raw[source];
+        }
+      });
+      return enabledSources;
+    }
+
+    function saveEnabledSources(){
+      saveStoredJSON(STORAGE_KEYS.enabledSources,state.enabledSources);
+    }
+
+    function syncEnabledSourceInputs(){
+      document.querySelectorAll('.source-chip input').forEach(cb=>{
+        const source=cb.dataset.source;
+        cb.checked=!!state.enabledSources[source];
+      });
+    }
+
     function loadPersistedState(){
+      state.enabledSources=normalizeEnabledSources(
+        loadStoredJSON(STORAGE_KEYS.enabledSources,null)
+      );
+
       const favoritesRaw=loadStoredJSON(STORAGE_KEYS.favorites,[]);
       state.favorites=Array.isArray(favoritesRaw)
         ? favoritesRaw.map(hydrateTrack).filter(Boolean)
@@ -1939,7 +1975,7 @@
       const grouped={migu:[],netease:[],qq:[],kuwo:[]};
       state.searchResults.forEach(t=>{if(grouped[t.source])grouped[t.source].push(t);});
       Object.keys(grouped).forEach(k=>grouped[k].sort((a,b)=>(a.displayIndex||0)-(b.displayIndex||0)));
-      const order=['migu','netease','qq','kuwo'];
+      const order=SOURCE_ORDER;
       const idx={migu:0,netease:0,qq:0,kuwo:0};
       const out=[];
       let added=true;
@@ -3014,7 +3050,10 @@
       });
 
       document.querySelectorAll('.source-chip input').forEach(cb=>{
-        cb.addEventListener('change',()=>{state.enabledSources[cb.dataset.source]=cb.checked;});
+        cb.addEventListener('change',()=>{
+          state.enabledSources[cb.dataset.source]=cb.checked;
+          saveEnabledSources();
+        });
       });
 
       dom.limitSelect.addEventListener('change',()=>{
@@ -3198,6 +3237,7 @@
       setupDOM();
       try{const lg=localStorage.getItem(STORAGE_KEYS.language); if(lg)state.language=lg;}catch(e){}
       loadPersistedState();
+      syncEnabledSourceInputs();
       renderPlaylistOptions();
       setupParticles();
       setupEvents();
