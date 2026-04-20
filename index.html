@@ -21,7 +21,15 @@
   <style>
     :root {
       color-scheme: dark;
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-right: env(safe-area-inset-right, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+      --safe-left: env(safe-area-inset-left, 0px);
       --bg-dark: #02030a;
+      --app-shell-bg:
+        radial-gradient(circle at 10% 0, #1b2340 0, transparent 55%),
+        radial-gradient(circle at 90% 100%, #211a38 0, transparent 60%),
+        #02030a;
       --panel-glass: rgba(8, 10, 26, 0.26);
       --panel-glass-soft: rgba(10, 14, 35, 0.26);
       --accent: #f5c84c;
@@ -43,8 +51,9 @@
     html, body {
       margin: 0;
       padding: 0;
-      height: 100%;
-      background: var(--bg-dark);
+      min-height: 100%;
+      min-height: 100dvh;
+      background: var(--app-shell-bg);
       color: var(--text-main);
       overflow: hidden; /* 页面整体不滚动 */
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -58,10 +67,7 @@
       height: 100%;
       z-index: 0;
       pointer-events: none;
-      background:
-        radial-gradient(circle at 10% 0, #1b2340 0, transparent 55%),
-        radial-gradient(circle at 90% 100%, #211a38 0, transparent 60%),
-        #02030a;
+      background: var(--app-shell-bg);
     }
 
     /* 主容器：四周留白 */
@@ -70,8 +76,12 @@
       z-index: 1;
       display: flex;
       flex-direction: column;
-      height: calc(100vh - 104px);
-      margin: 44px 80px;
+      height: calc(100dvh - var(--safe-top) - var(--safe-bottom) - 88px);
+      margin:
+        calc(var(--safe-top) + 44px)
+        calc(var(--safe-right) + 80px)
+        calc(var(--safe-bottom) + 44px)
+        calc(var(--safe-left) + 80px);
       padding: 10px 12px;
       gap: 10px;
       border-radius: 24px;
@@ -85,10 +95,24 @@
         0 0 120px rgba(136,196,255,0.35);
     }
     @media (max-width: 1280px) {
-      .app { margin: 32px 40px; height: calc(100vh - 70px); }
+      .app {
+        height: calc(100dvh - var(--safe-top) - var(--safe-bottom) - 64px);
+        margin:
+          calc(var(--safe-top) + 32px)
+          calc(var(--safe-right) + 40px)
+          calc(var(--safe-bottom) + 32px)
+          calc(var(--safe-left) + 40px);
+      }
     }
     @media (max-width: 900px) {
-      .app { margin: 16px; height: calc(100vh - 32px); }
+      .app {
+        height: calc(100dvh - var(--safe-top) - var(--safe-bottom) - 24px);
+        margin:
+          calc(var(--safe-top) + 12px)
+          calc(var(--safe-right) + 12px)
+          calc(var(--safe-bottom) + 12px)
+          calc(var(--safe-left) + 12px);
+      }
       .header-controls { gap: 10px; }
       .shortcut-hint {
         order: 3;
@@ -1144,6 +1168,9 @@
       header{
         display:none;
       }
+      .app{
+        border-radius: 22px;
+      }
       .input,
       .modal input{
         font-size:16px;
@@ -1617,6 +1644,11 @@
 
     const dom = {};
     let audioLevel = 0;
+    const STORAGE_KEYS = {
+      language:'pikachu-music-lang',
+      favorites:'pikachu-music-favorites',
+      playlists:'pikachu-music-playlists'
+    };
 
     function $(id){return document.getElementById(id);}
     function t(k){const lang=state.language;return (translations[lang]&&translations[lang][k])||translations.zh[k]||k;}
@@ -1638,6 +1670,129 @@
 
     function isIOSDevice(){
       return /iphone|ipad|ipod/i.test(window.navigator.userAgent||'');
+    }
+
+    function toPersistedTrack(track){
+      if(!track || !track.uid || !track.source) return null;
+      return {
+        uid:track.uid,
+        source:track.source,
+        title:track.title||'',
+        artist:track.artist||'',
+        album:track.album||'',
+        cover:track.cover||null,
+        keyword:track.keyword||'',
+        displayIndex:Number.isFinite(track.displayIndex)?track.displayIndex:null,
+        requestNum:Number.isFinite(track.requestNum)?track.requestNum:null,
+        songid:track.songid||null,
+        songMid:track.songMid||null,
+        qqId:track.qqId||null,
+        qqSearchKey:track.qqSearchKey||'',
+        quality:track.quality||null,
+        qualityLabel:track.qualityLabel||null,
+        pay:track.pay||null,
+        qqQualityText:track.qqQualityText||null
+      };
+    }
+
+    function hydrateTrack(raw){
+      const track=toPersistedTrack(raw);
+      if(!track) return null;
+      return {
+        ...track,
+        detailsLoaded:false,
+        audioUrl:null,
+        lrc:null,
+        lrcUrl:null
+      };
+    }
+
+    function loadStoredJSON(key,fallback){
+      try{
+        const raw=localStorage.getItem(key);
+        if(!raw) return fallback;
+        return JSON.parse(raw);
+      }catch(e){
+        console.warn('storage load failed:', key, e);
+        return fallback;
+      }
+    }
+
+    function saveStoredJSON(key,value){
+      try{
+        localStorage.setItem(key,JSON.stringify(value));
+      }catch(e){
+        console.warn('storage save failed:', key, e);
+      }
+    }
+
+    function saveFavorites(){
+      saveStoredJSON(
+        STORAGE_KEYS.favorites,
+        state.favorites.map(toPersistedTrack).filter(Boolean)
+      );
+    }
+
+    function savePlaylists(){
+      saveStoredJSON(
+        STORAGE_KEYS.playlists,
+        state.playlists.map(pl=>({
+          id:pl.id,
+          name:pl.name||'',
+          tracks:(Array.isArray(pl.tracks)?pl.tracks:[]).map(toPersistedTrack).filter(Boolean)
+        }))
+      );
+    }
+
+    function loadPersistedState(){
+      const favoritesRaw=loadStoredJSON(STORAGE_KEYS.favorites,[]);
+      state.favorites=Array.isArray(favoritesRaw)
+        ? favoritesRaw.map(hydrateTrack).filter(Boolean)
+        : [];
+
+      const playlistsRaw=loadStoredJSON(STORAGE_KEYS.playlists,[]);
+      state.playlists=Array.isArray(playlistsRaw)
+        ? playlistsRaw
+            .map(pl=>{
+              if(!pl || typeof pl!=='object') return null;
+              const id=typeof pl.id==='string' && pl.id ? pl.id : `pl-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+              const name=typeof pl.name==='string' && pl.name.trim()
+                ? pl.name.trim()
+                : (state.language==='zh'?'未命名歌单':'Untitled Playlist');
+              const tracks=Array.isArray(pl.tracks)
+                ? pl.tracks.map(hydrateTrack).filter(Boolean)
+                : [];
+              return {id,name,tracks};
+            })
+            .filter(Boolean)
+        : [];
+    }
+
+    function renderPlaylistOptions(){
+      if(!dom.playlistSelect) return;
+      const currentValue=dom.playlistSelect.value;
+      dom.playlistSelect.innerHTML='';
+
+      if(!state.playlists.length){
+        const opt=document.createElement('option');
+        opt.value='';
+        opt.textContent=state.language==='zh'?'暂无歌单':'No playlist';
+        dom.playlistSelect.appendChild(opt);
+        dom.playlistSelect.value='';
+        return;
+      }
+
+      state.playlists.forEach(pl=>{
+        const opt=document.createElement('option');
+        opt.value=pl.id;
+        opt.textContent=pl.name;
+        dom.playlistSelect.appendChild(opt);
+      });
+
+      const nextValue=state.playlists.some(pl=>pl.id===currentValue)
+        ? currentValue
+        : state.playlists[0].id;
+      dom.playlistSelect.value=nextValue;
     }
 
     function updateNetworkStatus(){
@@ -1841,7 +1996,7 @@
     function setLanguage(lang){
       if(lang!=='zh' && lang!=='en') lang='zh';
       state.language=lang;
-      try{localStorage.setItem('pikachu-music-lang',lang);}catch(e){}
+      try{localStorage.setItem(STORAGE_KEYS.language,lang);}catch(e){}
       document.querySelectorAll('.lang-btn').forEach(btn=>{
         btn.classList.toggle('active',btn.dataset.lang===lang);
       });
@@ -1855,6 +2010,8 @@
       dom.playlistNameInput.placeholder = lang==='zh'
         ? '例如：通勤歌单 / 宝可梦歌单'
         : 'e.g. Commute mix / Pokemon list';
+      renderPlaylistOptions();
+      renderPlaylistList();
       updatePlaylistInfoLabel();
       updateNetworkStatus();
       updatePWAUI();
@@ -2559,6 +2716,7 @@
       const i=state.favorites.findIndex(x=>x.uid===tr.uid);
       if(i>=0){state.favorites.splice(i,1);showToast(t('toastRemovedFavorite'));}
       else{state.favorites.push(tr);showToast(t('toastAddedFavorite'));}
+      saveFavorites();
       updateMainFavButton();
       renderPlaylistList();
     }
@@ -2581,6 +2739,7 @@
         return;
       }
       pl.tracks.push(track);
+      savePlaylists();
       renderPlaylistList();
       showToast(t('toastAddedToPlaylist'));
     }
@@ -2653,11 +2812,8 @@
         dom.playlistSelectRow.style.display='none';
       }else{
         dom.playlistSelectRow.style.display='flex';
+        renderPlaylistOptions();
         if(!state.playlists.length){
-          dom.playlistSelect.innerHTML='';
-          const opt=document.createElement('option');
-          opt.value=''; opt.textContent=state.language==='zh'?'暂无歌单':'No playlist';
-          dom.playlistSelect.appendChild(opt);
           updatePlaylistInfoLabel();
           return;
         }
@@ -2721,6 +2877,7 @@
           const i=state.favorites.findIndex(x=>x.uid===track.uid);
           if(i>=0){state.favorites.splice(i,1);showToast(t('toastRemovedFavorite'));}
           else{state.favorites.push(track);showToast(t('toastAddedFavorite'));}
+          saveFavorites();
           renderPlaylistList();
           updateMainFavButton();
         });
@@ -2753,9 +2910,8 @@
       const id='pl-'+Date.now()+'-'+Math.random().toString(16).slice(2);
       const pl={id,name,tracks:[]};
       state.playlists.push(pl);
-      const opt=document.createElement('option');
-      opt.value=pl.id; opt.textContent=pl.name;
-      dom.playlistSelect.appendChild(opt);
+      savePlaylists();
+      renderPlaylistOptions();
       dom.playlistSelect.value=pl.id;
       closePlaylistModal();
       renderPlaylistList();
@@ -3111,13 +3267,17 @@
 
     function init(){
       setupDOM();
-      try{const lg=localStorage.getItem('pikachu-music-lang'); if(lg)state.language=lg;}catch(e){}
+      try{const lg=localStorage.getItem(STORAGE_KEYS.language); if(lg)state.language=lg;}catch(e){}
+      loadPersistedState();
+      renderPlaylistOptions();
       setupParticles();
       setupEvents();
       setupMediaSession();
       setLanguage(state.language);
       setPlaymodeUI();
       dom.audio.volume=parseFloat(dom.volumeSlider.value);
+      renderPlaylistList();
+      updateMainFavButton();
       setupPWA();
     }
 
