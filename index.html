@@ -4,11 +4,7 @@
   <meta charset="UTF-8" />
   <title>皮卡丘的音乐站 - Pikachu Music</title>
   <meta name="referrer" content="no-referrer" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="color-scheme" content="dark" />
-  <meta name="theme-color" content="#02030a" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <!-- 圆润可爱字体 -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -65,7 +61,6 @@
       display: flex;
       flex-direction: column;
       height: calc(100vh - 104px);
-      height: calc(100dvh - 104px);
       margin: 44px 80px;
       padding: 10px 12px;
       gap: 10px;
@@ -80,30 +75,24 @@
         0 0 120px rgba(136,196,255,0.35);
     }
     @media (max-width: 1280px) {
-      .app { margin: 32px 40px; height: calc(100vh - 70px); height: calc(100dvh - 70px); }
+      .app { margin: 32px 40px; height: calc(100vh - 70px); }
     }
     @media (max-width: 900px) {
-      .app { margin: 16px; height: calc(100vh - 32px); height: calc(100dvh - 32px); }
+      .app { margin: 16px; height: calc(100vh - 32px); }
     }
 
-    /* iPhone：内容铺满屏幕，并把安全区背景与页面一致 */
-    @media (max-width: 600px) {
-      .app{
-        margin: 0;
-        height: 100vh;
-        height: 100dvh;
-        border-radius: 0;
-        padding-top: calc(10px + env(safe-area-inset-top));
-        padding-right: calc(12px + env(safe-area-inset-right));
-        padding-bottom: calc(10px + env(safe-area-inset-bottom));
-        padding-left: calc(12px + env(safe-area-inset-left));
-      }
+    .ripple-target,
+    .btn,
+    .track-item,
+    .search-mini-item {
+      position: relative;
+      overflow: hidden;
     }
 
     header {
       display: flex;
       align-items: center;
-      justify-content: flex-end;
+      justify-content: space-between;
       padding: 8px 16px;
       border-radius: 18px;
       background: linear-gradient(120deg, rgba(255,255,255,0.06), rgba(7,10,30,0.90));
@@ -111,6 +100,54 @@
       box-shadow: 0 10px 26px rgba(0,0,0,0.8);
       min-height: 64px;
       flex-shrink: 0;
+    }
+
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .pikachu-box {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      padding: 4px;
+      background:
+        radial-gradient(circle at 30% 0, rgba(255,255,255,0.65), rgba(255,230,140,1)),
+        radial-gradient(circle at 70% 100%, rgba(255,150,200,0.9), rgba(255,220,130,0.9));
+      box-shadow:
+        0 0 18px rgba(255,215,130,1),
+        0 14px 28px rgba(0,0,0,0.95);
+      border: 2px solid rgba(255,238,190,1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: pika-float 2.4s ease-in-out infinite;
+    }
+    .pikachu-img {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+    @keyframes pika-float {
+      0%,100% { transform: translateY(0); }
+      50%     { transform: translateY(-5px); }
+    }
+
+    .title-text h1 {
+      margin: 0;
+      font-size: 18px;
+      letter-spacing: 1px;
+      text-shadow:
+        0 0 12px rgba(255,212,95,0.9),
+        0 0 26px rgba(255,176,117,0.7);
+    }
+    .title-text p {
+      margin: 2px 0 0;
+      font-size: 11px;
+      color: var(--text-sub);
     }
 
     .header-controls {
@@ -234,6 +271,7 @@
       font-weight: 500;
       cursor: pointer;
       box-shadow: 0 7px 16px rgba(245,200,76,0.75);
+      transition: transform .12s ease, box-shadow .12s ease;
     }
     .btn-secondary {
       background: radial-gradient(circle at 30% 0, rgba(255,255,255,0.05), rgba(80,100,180,0.95));
@@ -245,6 +283,10 @@
       border: 1px solid rgba(255,255,255,0.22);
       color: var(--text-sub);
       box-shadow: none;
+    }
+    .btn:active {
+      transform: translateY(1px) scale(.97);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.85);
     }
     .btn-icon {
       width: 28px;
@@ -392,11 +434,12 @@
       border: 1px solid rgba(255,255,255,0.05);
       font-size: 11px;
       cursor: pointer;
-      transition: background .15s, box-shadow .1s;
+      transition: background .15s, transform .1s, box-shadow .1s;
     }
     .search-mini-item:hover {
       background: rgba(26,32,80,0.9);
       box-shadow: 0 8px 18px rgba(0,0,0,0.85);
+      transform: translateY(-1px);
     }
     .mini-meta-main {
       display: flex;
@@ -661,6 +704,58 @@
       position:relative;
       box-shadow:0 12px 32px rgba(0,0,0,0.9);
     }
+    .lyrics-container::before,
+    .lyrics-container::after {
+      content:"";
+      position:absolute;
+      pointer-events:none;
+      mix-blend-mode:screen;
+    }
+    .lyrics-container::before {
+      inset:-25%;
+      background:conic-gradient(
+        from 0deg,
+        rgba(255,214,102,0.08),
+        rgba(255,214,102,0.38),
+        rgba(104,184,255,0.38),
+        rgba(186,132,255,0.40),
+        rgba(255,214,102,0.08)
+      );
+      opacity:0.46;
+      filter:blur(14px);
+      animation: lyricsGlow 16s linear infinite;
+    }
+    @keyframes lyricsGlow { to { transform:rotate(360deg);} }
+    .lyrics-container::after {
+      top:-40%;
+      left:-20%;
+      width:70%;
+      height:150%;
+      background:linear-gradient(
+        120deg,
+        rgba(255,248,170,0.0),
+        rgba(255,248,170,0.36),
+        rgba(161,233,255,0.0)
+      );
+      transform:translateX(-130%);
+      animation: lyricsSweep 7s linear infinite;
+      opacity:0.95;
+    }
+    @keyframes lyricsSweep {
+      0% { transform:translateX(-130%); }
+      50%{ transform:translateX(40%); }
+      100%{ transform:translateX(130%); }
+    }
+    .lyrics-container.alt-style::before {
+      background:conic-gradient(
+        from 0deg,
+        rgba(104,184,255,0.14),
+        rgba(186,132,255,0.40),
+        rgba(255,214,102,0.32),
+        rgba(104,184,255,0.46),
+        rgba(186,132,255,0.40)
+      );
+    }
     .lyrics-inner {
       position:relative;
       z-index:1;
@@ -682,12 +777,13 @@
       color:rgba(196,199,235,0.78);
       margin:4px 0;
       opacity:0.52;
-      transition:color .25s ease, text-shadow .25s ease, opacity .25s ease;
+      transition:transform .25s ease, color .25s ease, text-shadow .25s ease, opacity .25s ease;
       white-space:normal;
       letter-spacing:0.04em;
     }
     .lyrics-line.active {
       opacity:1;
+      transform:scale(1.14);
       background:linear-gradient(120deg,#ffe6a7,#ff9bd4,#8fd5ff);
       -webkit-background-clip:text;
       background-clip:text;
@@ -835,10 +931,11 @@
       border:1px solid rgba(255,255,255,0.06);
       font-size:11px;
       cursor:pointer;
-      transition:background .15s, box-shadow .1s;
+      transition:background .15s, transform .1s, box-shadow .1s;
     }
     .track-item:hover {
       background:rgba(26,32,80,0.95);
+      transform:translateY(-1px);
       box-shadow:0 8px 18px rgba(0,0,0,0.9);
     }
     .track-item.playing {
@@ -908,6 +1005,43 @@
     #toast.show {
       opacity:1;
       transform:translateX(-50%) translateY(-4px);
+    }
+
+    /* 柔和水波纹：双圈 */
+    .ripple-circle,
+    .ripple-circle-inner {
+      position:absolute;
+      border-radius:50%;
+      pointer-events:none;
+      transform:translate(-50%,-50%) scale(0);
+      opacity:0.9;
+      z-index:20;
+    }
+
+    .ripple-circle {
+      border:2px solid rgba(255,223,140,0.85);
+      box-shadow:0 0 14px rgba(255,223,140,0.9);
+      background:radial-gradient(circle, rgba(255,250,220,0.45), rgba(255,223,140,0.0));
+      animation:rippleOuter .75s cubic-bezier(0.22,0.61,0.36,1) forwards;
+    }
+    .ripple-circle-inner {
+      border:1px solid rgba(130,196,255,0.9);
+      box-shadow:0 0 16px rgba(130,196,255,0.9);
+      background:radial-gradient(circle, rgba(255,255,255,0.35), rgba(102,196,255,0.0));
+      animation:rippleInner .75s cubic-bezier(0.22,0.61,0.36,1) forwards;
+      z-index:19;
+    }
+    @keyframes rippleOuter {
+      to {
+        transform:translate(-50%,-50%) scale(2.4);
+        opacity:0;
+      }
+    }
+    @keyframes rippleInner {
+      to {
+        transform:translate(-50%,-50%) scale(1.7);
+        opacity:0;
+      }
     }
 
     /* 滚动条 */
@@ -1056,7 +1190,15 @@
       .playlist-panel{grid-area:playlist;}
     }
     @media (max-width:860px){
-      header{ display:none; }
+      header{
+        flex-direction:column;
+        align-items:flex-start;
+        gap:6px;
+      }
+      .header-controls{
+        width:100%;
+        justify-content:space-between;
+      }
       .layout{
         grid-template-columns:1fr;
         grid-template-rows:auto auto auto;
@@ -1066,40 +1208,38 @@
           "playlist";
       }
     }
-
-    /* 移动端（尤其 iOS Safari）：输入框字号 < 16px 时聚焦会触发页面自动放大 */
-    @media (hover: none) and (pointer: coarse) {
-      input[type="text"],
-      input[type="search"],
-      textarea,
-      select,
-      .limit-row select,
-      .playlist-select-row select {
-        font-size: 16px;
-      }
-    }
   </style>
 </head>
 <body>
   <canvas id="bg-canvas"></canvas>
 
   <div class="app">
-    <header>
+    <header class="ripple-target">
+      <div class="logo-area">
+        <div class="pikachu-box ripple-target">
+          <!-- 请放一张你喜欢的 pikachu.gif 到同目录 -->
+          <img src="pikachu.gif" alt="Pikachu" class="pikachu-img">
+        </div>
+        <div class="title-text">
+          <h1 data-i18n="appTitle">皮卡丘的音乐站</h1>
+          <p data-i18n="authorLabel">作者：Zhenchao Jin + GPT 5.1</p>
+        </div>
+      </div>
       <div class="header-controls">
-        <div class="lang-toggle">
+        <div class="lang-toggle ripple-target">
           <button class="lang-btn active" data-lang="zh">中</button>
           <button class="lang-btn" data-lang="en">EN</button>
         </div>
         <div class="shortcut-hint" data-i18n="shortcutHint">
-          快捷键：Space 播放/暂停 · ←/→ 跳转 · ↑/↓ 音量 · N/P 切歌 · F 收藏 · M 静音
+          快捷键：Space 播放/暂停 · ←/→ 跳转 · ↑/↓ 音量 · N/P 切歌 · F 收藏 · L 切换歌词效果
         </div>
-        <button id="shortcut-toggle-btn" class="shortcut-toggle-btn" title="快捷键说明">⌨️</button>
+        <button id="shortcut-toggle-btn" class="shortcut-toggle-btn ripple-target" title="快捷键说明">⌨️</button>
       </div>
     </header>
 
     <main class="layout">
       <!-- 左：搜索 -->
-      <section class="panel search-panel">
+      <section class="panel search-panel ripple-target">
         <div class="panel-header">
           <div class="panel-title">
             <span class="icon">🔍</span>
@@ -1108,30 +1248,30 @@
           <span class="chip" data-i18n="searchSubtitle">支持咪咕 / 网易云 / QQ / 酷我</span>
         </div>
         <div class="search-panel-content">
-          <div class="search-row">
+          <div class="search-row ripple-target">
             <span class="search-prefix">🔍</span>
             <input id="search-input" class="input" type="text"
                    placeholder="输入歌名 / 歌手，回车搜索…" />
-            <button id="search-btn" class="btn" data-i18n="searchButton">搜索</button>
+            <button id="search-btn" class="btn ripple-target" data-i18n="searchButton">搜索</button>
           </div>
 
           <div class="source-row">
-            <label class="source-chip">
+            <label class="source-chip ripple-target">
               <span class="source-dot migu"></span>
               <input type="checkbox" data-source="migu" checked />
               <span>咪咕</span>
             </label>
-            <label class="source-chip">
+            <label class="source-chip ripple-target">
               <span class="source-dot netease"></span>
               <input type="checkbox" data-source="netease" checked />
               <span>网易云</span>
             </label>
-            <label class="source-chip">
+            <label class="source-chip ripple-target">
               <span class="source-dot qq"></span>
               <input type="checkbox" data-source="qq" checked />
               <span>QQ</span>
             </label>
-            <label class="source-chip">
+            <label class="source-chip ripple-target">
               <span class="source-dot kuwo"></span>
               <input type="checkbox" data-source="kuwo" checked />
               <span>酷我</span>
@@ -1147,7 +1287,7 @@
               <option value="30">30</option>
             </select>
             <span data-i18n="perSourceCountTail">首结果</span>
-            <button id="load-more-btn" class="btn btn-secondary" data-i18n="loadMore">
+            <button id="load-more-btn" class="btn btn-secondary ripple-target" data-i18n="loadMore">
               加载更多
             </button>
           </div>
@@ -1162,13 +1302,13 @@
       </section>
 
       <!-- 中：播放器 -->
-      <section class="panel player-panel">
+      <section class="panel player-panel ripple-target">
         <div class="panel-header">
           <div class="panel-title">
             <span class="icon">🎧</span>
             <span data-i18n="playerTitle">正在播放</span>
           </div>
-          <span class="chip" data-i18n="playerSubtitle">歌词区域</span>
+          <span class="chip" data-i18n="playerSubtitle">歌词动态高亮 · 炫酷霓虹</span>
         </div>
 
         <div class="player-top">
@@ -1191,8 +1331,8 @@
               </div>
               <div class="player-actions">
                 <div class="player-btn-row">
-                  <button id="fav-btn" class="btn btn-secondary btn-icon" title="收藏 (F)">❤</button>
-                  <button id="download-btn" class="btn btn-secondary btn-icon" title="下载">⬇</button>
+                  <button id="fav-btn" class="btn btn-secondary btn-icon ripple-target" title="收藏 (F)">❤</button>
+                  <button id="download-btn" class="btn btn-secondary btn-icon ripple-target" title="下载">⬇</button>
                 </div>
                 <div id="player-status" class="status-pill" data-i18n="playerStatusIdle">空闲</div>
               </div>
@@ -1201,7 +1341,7 @@
             <div class="player-controls">
               <div class="progress-row">
                 <span id="current-time" class="progress-time">00:00</span>
-                <div id="progress-bar-wrapper" class="progress-bar-wrapper">
+                <div id="progress-bar-wrapper" class="progress-bar-wrapper ripple-target">
                   <div id="progress-bar" class="progress-bar"></div>
                   <div id="progress-handle" class="progress-handle"></div>
                 </div>
@@ -1209,9 +1349,9 @@
               </div>
               <div class="control-row">
                 <div class="control-main">
-                  <button id="prev-btn" class="btn btn-secondary btn-icon" title="上一首 (P)">⏮</button>
-                  <button id="play-btn" class="btn play-btn" title="播放/暂停 (Space)">▶</button>
-                  <button id="next-btn" class="btn btn-secondary btn-icon" title="下一首 (N)">⏭</button>
+                  <button id="prev-btn" class="btn btn-secondary btn-icon ripple-target" title="上一首 (P)">⏮</button>
+                  <button id="play-btn" class="btn play-btn ripple-target" title="播放/暂停 (Space)">▶</button>
+                  <button id="next-btn" class="btn btn-secondary btn-icon ripple-target" title="下一首 (N)">⏭</button>
                 </div>
                 <div class="control-secondary">
                   <span>🔊</span>
@@ -1234,13 +1374,13 @@
       </section>
 
       <!-- 右：播放列表 -->
-      <section class="panel playlist-panel">
+      <section class="panel playlist-panel ripple-target">
         <div class="panel-header">
           <div class="panel-title">
             <span class="icon">📜</span>
             <span data-i18n="playlistTitle">播放列表</span>
           </div>
-          <div class="playlist-tabs">
+          <div class="playlist-tabs ripple-target">
             <div class="playlist-tab active" data-tab="results" data-i18n="tabResults">搜索结果</div>
             <div class="playlist-tab" data-tab="favorites" data-i18n="tabFavorites">我的收藏</div>
             <div class="playlist-tab" data-tab="playlists" data-i18n="tabCustomLists">自建歌单</div>
@@ -1253,13 +1393,13 @@
             <div class="playlist-right-controls">
               <div id="playlist-select-row" class="playlist-select-row" style="display:none;">
                 <select id="playlist-select"></select>
-                <button id="add-current-btn" class="btn btn-secondary btn-icon" title="把当前歌曲加入歌单">＋</button>
-                <button id="new-playlist-btn" class="btn btn-ghost" data-i18n="newPlaylist">新建歌单</button>
+                <button id="add-current-btn" class="btn btn-secondary btn-icon ripple-target" title="把当前歌曲加入歌单">＋</button>
+                <button id="new-playlist-btn" class="btn btn-ghost ripple-target" data-i18n="newPlaylist">新建歌单</button>
               </div>
               <div class="playmode-row">
-                <button class="playmode-btn active" data-mode="list" title="列表循环">🔁</button>
-                <button class="playmode-btn" data-mode="single" title="单曲循环">🔂</button>
-                <button class="playmode-btn" data-mode="shuffle" title="随机播放">🔀</button>
+                <button class="playmode-btn active ripple-target" data-mode="list" title="列表循环">🔁</button>
+                <button class="playmode-btn ripple-target" data-mode="single" title="单曲循环">🔂</button>
+                <button class="playmode-btn ripple-target" data-mode="shuffle" title="随机播放">🔀</button>
               </div>
             </div>
           </div>
@@ -1275,7 +1415,7 @@
 
   <!-- 歌单弹窗 -->
   <div id="playlist-modal" class="modal-backdrop">
-    <div class="modal">
+    <div class="modal ripple-target">
       <div class="modal-header">
         <div class="modal-title-wrap">
           <div class="modal-title-icon">🎵</div>
@@ -1286,15 +1426,15 @@
       <p class="modal-desc" data-i18n="modalNewPlaylistDesc">给你的歌单取一个可爱的名字吧～</p>
       <input id="playlist-name-input" type="text" placeholder="例如：通勤歌单 / 宝可梦歌单" />
       <div class="modal-actions">
-        <button id="playlist-cancel-btn" class="btn btn-ghost" data-i18n="modalCancel">取消</button>
-        <button id="playlist-confirm-btn" class="btn btn-secondary" data-i18n="modalConfirm">确定</button>
+        <button id="playlist-cancel-btn" class="btn btn-ghost ripple-target" data-i18n="modalCancel">取消</button>
+        <button id="playlist-confirm-btn" class="btn btn-secondary ripple-target" data-i18n="modalConfirm">确定</button>
       </div>
     </div>
   </div>
 
   <!-- 快捷键说明弹窗 -->
   <div id="shortcut-modal" class="modal-backdrop">
-    <div class="modal">
+    <div class="modal ripple-target">
       <div class="modal-header">
         <div class="modal-title-wrap">
           <div class="modal-title-icon">⌨️</div>
@@ -1327,6 +1467,10 @@
           <div class="shortcut-key"><kbd>F</kbd></div>
         </div>
         <div class="shortcut-card">
+          <div class="shortcut-label" data-i18n="shortcutLyricsFX">切换歌词炫酷效果</div>
+          <div class="shortcut-key"><kbd>L</kbd></div>
+        </div>
+        <div class="shortcut-card">
           <div class="shortcut-label" data-i18n="shortcutMute">静音 / 取消静音</div>
           <div class="shortcut-key"><kbd>M</kbd></div>
         </div>
@@ -1347,7 +1491,9 @@
   (function(){
     const translations = {
       zh: {
-        shortcutHint:"快捷键：Space 播放/暂停 · ←/→ 跳转 · ↑/↓ 音量 · N/P 切歌 · F 收藏 · M 静音",
+        appTitle:"皮卡丘的音乐站",
+        authorLabel:"作者：Zhenchao Jin + GPT 5.1",
+        shortcutHint:"快捷键：Space 播放/暂停 · ←/→ 跳转 · ↑/↓ 音量 · N/P 切歌 · F 收藏 · L 切换歌词效果",
         shortcutPanelTitle:"快捷键说明",
         shortcutPanelDesc:"使用键盘可以更加方便地控制皮卡丘的音乐站：",
         shortcutPlayPause:"播放 / 暂停",
@@ -1355,6 +1501,7 @@
         shortcutVolume:"音量加 / 减",
         shortcutPrevNext:"上一首 / 下一首",
         shortcutFav:"收藏 / 取消收藏当前歌曲",
+        shortcutLyricsFX:"切换歌词炫酷效果",
         shortcutMute:"静音 / 取消静音",
         shortcutFocusSearch:"聚焦搜索框",
         shortcutCloseModal:"提示：按 Esc 可以关闭弹窗。",
@@ -1369,7 +1516,7 @@
         searchStatusDone:"搜索完成。",
         searchStatusNoSource:"请至少选择一个音乐源。",
         playerTitle:"正在播放",
-        playerSubtitle:"歌词区域",
+        playerSubtitle:"歌词动态高亮 · 炫酷霓虹",
         coverHint:"搜索并播放一首歌吧！",
         playerStatusIdle:"空闲",
         playerStatusLoading:"加载音源中…",
@@ -1393,6 +1540,7 @@
         toastNeedKeyword:"请先输入搜索关键词。",
         toastSearchError:"搜索时发生了一点小错误，请稍后再试。",
         toastPlayError:"播放失败，请稍后再试。",
+        toastLyricStyleSwitched:"已切换歌词炫酷效果。",
         toastDownloadNotReady:"当前歌曲还未加载完成，稍后再试。",
         toastPlaylistCreated:"歌单创建成功。",
         toastPlaylistEmpty:"当前歌单为空，先添加几首歌吧~",
@@ -1411,7 +1559,9 @@
         modalCancel:"取消"
       },
       en: {
-        shortcutHint:"Shortcuts: Space Play/Pause · ←/→ Seek · ↑/↓ Volume · N/P Track · F Fav · M Mute",
+        appTitle:"Pikachu Music Station",
+        authorLabel:"Author: Zhenchao Jin + GPT 5.1",
+        shortcutHint:"Shortcuts: Space Play/Pause · ←/→ Seek · ↑/↓ Volume · N/P Track · F Fav · L Lyrics FX",
         shortcutPanelTitle:"Keyboard Shortcuts",
         shortcutPanelDesc:"Control Pikachu Music Station more easily with your keyboard:",
         shortcutPlayPause:"Play / Pause",
@@ -1419,6 +1569,7 @@
         shortcutVolume:"Volume up / down",
         shortcutPrevNext:"Previous / Next track",
         shortcutFav:"Favorite / unfavorite current track",
+        shortcutLyricsFX:"Toggle lyrics FX",
         shortcutMute:"Mute / unmute",
         shortcutFocusSearch:"Focus on search box",
         shortcutCloseModal:"Tip: press Esc to close dialogs.",
@@ -1433,7 +1584,7 @@
         searchStatusDone:"Search completed.",
         searchStatusNoSource:"Please select at least one music source.",
         playerTitle:"Now Playing",
-        playerSubtitle:"Lyrics",
+        playerSubtitle:"Dynamic neon lyrics visualizer",
         coverHint:"Search and play a song!",
         playerStatusIdle:"Idle",
         playerStatusLoading:"Loading audio…",
@@ -1457,6 +1608,7 @@
         toastNeedKeyword:"Please enter a search keyword first.",
         toastSearchError:"An error occurred while searching.",
         toastPlayError:"Playback failed. Please try again.",
+        toastLyricStyleSwitched:"Lyrics FX toggled.",
         toastDownloadNotReady:"Song not fully loaded yet. Try again later.",
         toastPlaylistCreated:"Playlist created.",
         toastPlaylistEmpty:"Playlist is empty. Add some songs first.",
@@ -1496,6 +1648,7 @@
       currentLyricIndex:-1,
       searchInProgress:false,
       noMoreResults:false,
+      lyricsAlt:false,
       muted:false
     };
 
@@ -1514,95 +1667,6 @@
       if(!isFinite(sec)||sec<0)sec=0;
       const m=Math.floor(sec/60);const s=Math.floor(sec%60);
       return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
-    }
-
-    function hasMediaSessionSupport(){
-      return typeof navigator!=='undefined' && 'mediaSession' in navigator;
-    }
-
-    function getDefaultMediaArtwork(){
-      return [{
-        src:new URL('docs/logo.png', window.location.href).href,
-        sizes:'512x512',
-        type:'image/png'
-      }];
-    }
-
-    function buildMediaArtwork(track){
-      if(track && track.cover){
-        return [{src:track.cover}];
-      }
-      return getDefaultMediaArtwork();
-    }
-
-    function updateMediaSessionMetadata(){
-      if(!hasMediaSessionSupport() || typeof MediaMetadata==='undefined') return;
-      const track=state.currentTrack;
-      if(!track){
-        navigator.mediaSession.metadata=null;
-        return;
-      }
-      navigator.mediaSession.metadata=new MediaMetadata({
-        title:track.title||t('playerTitle'),
-        artist:track.artist||'',
-        album:track.album||'',
-        artwork:buildMediaArtwork(track)
-      });
-    }
-
-    function updateMediaSessionPlaybackState(){
-      if(!hasMediaSessionSupport()) return;
-      navigator.mediaSession.playbackState=state.currentTrack?(state.isPlaying?'playing':'paused'):'none';
-    }
-
-    function updateMediaSessionPositionState(){
-      if(!hasMediaSessionSupport() || typeof navigator.mediaSession.setPositionState!=='function') return;
-      const duration=dom.audio && isFinite(dom.audio.duration) ? dom.audio.duration : 0;
-      try{
-        if(duration > 0){
-          navigator.mediaSession.setPositionState({
-            duration,
-            playbackRate:dom.audio.playbackRate||1,
-            position:Math.min(dom.audio.currentTime||0,duration)
-          });
-        }else{
-          navigator.mediaSession.setPositionState({});
-        }
-      }catch(e){}
-    }
-
-    function setMediaSessionHandler(action,handler){
-      if(!hasMediaSessionSupport()) return;
-      try{
-        navigator.mediaSession.setActionHandler(action,handler);
-      }catch(e){}
-    }
-
-    function bindMediaSessionActions(){
-      if(!hasMediaSessionSupport()) return;
-      setMediaSessionHandler('play',()=>{
-        if(dom.audio && dom.audio.src) dom.audio.play().catch(()=>{});
-      });
-      setMediaSessionHandler('pause',()=>{
-        if(dom.audio) dom.audio.pause();
-      });
-      setMediaSessionHandler('previoustrack',()=>playNext('prev'));
-      setMediaSessionHandler('nexttrack',()=>playNext('next'));
-      // iOS Safari 会在某些情况下优先显示 10 秒快进/快退，这里显式清空对应动作。
-      setMediaSessionHandler('seekbackward',null);
-      setMediaSessionHandler('seekforward',null);
-      setMediaSessionHandler('stop',()=>{
-        dom.audio.pause();
-        dom.audio.currentTime=0;
-      });
-    }
-
-    function setupMediaSession(){
-      if(!hasMediaSessionSupport()) return;
-      bindMediaSessionActions();
-      updateMediaSessionMetadata();
-      updateMediaSessionPlaybackState();
-      updateMediaSessionPositionState();
     }
 
     function getInterleavedSearchList(){
@@ -2243,8 +2307,6 @@
 
       dom.playerStatus.textContent=t('playerStatusLoading');
       applyUI();
-      updateMediaSessionMetadata();
-      updateMediaSessionPositionState();
 
       state.lyricLines = track.lrc ? parseLRC(track.lrc) : [];
       renderLyrics();
@@ -2253,7 +2315,6 @@
       try{
         await ensureTrackDetails(track);
         applyUI();
-        updateMediaSessionMetadata();
         state.lyricLines = track.lrc ? parseLRC(track.lrc) : [];
         renderLyrics();
         if(!track.audioUrl){showToast(t('toastPlayError'));dom.playerStatus.textContent=t('playerStatusIdle');return;}
@@ -2376,7 +2437,7 @@
       const out=getInterleavedSearchList();
       out.forEach((track,i)=>{
         const item=document.createElement('div');
-        item.className='search-mini-item';
+        item.className='search-mini-item ripple-target';
         const meta=document.createElement('div');
         meta.className='mini-meta-main';
         const tt=document.createElement('div');
@@ -2453,7 +2514,7 @@
 
       list.forEach((track,idx)=>{
         const item=document.createElement('div');
-        item.className='track-item';
+        item.className='track-item ripple-target';
         if(state.currentTrack && state.currentTrack.uid===track.uid) item.classList.add('playing');
 
         const index=document.createElement('div');
@@ -2478,9 +2539,9 @@
         const act=document.createElement('div');
         act.className='track-actions';
         const pBtn=document.createElement('button');
-        pBtn.className='btn btn-secondary btn-icon'; pBtn.textContent='▶';
+        pBtn.className='btn btn-secondary btn-icon ripple-target'; pBtn.textContent='▶';
         const fBtn=document.createElement('button');
-        fBtn.className='btn btn-secondary btn-icon'; fBtn.textContent='❤';
+        fBtn.className='btn btn-secondary btn-icon ripple-target'; fBtn.textContent='❤';
         if(isFavorite(track)) fBtn.classList.add('btn-fav-active');
 
         pBtn.addEventListener('click',ev=>{
@@ -2565,7 +2626,7 @@
       searchAllSources(false);
     }
 
-    // ===================== 背景粒子 =====================
+    // ===================== 背景粒子 & 水波纹 =====================
 
     function setupParticles(){
       const canvas=$('bg-canvas');const ctx=canvas.getContext('2d');
@@ -2629,6 +2690,31 @@
         requestAnimationFrame(tick);
       }
       tick();
+    }
+
+    function setupRipple(){
+      document.addEventListener('pointerdown',e=>{
+        const target=e.target.closest('.ripple-target, .btn, .track-item, .search-mini-item');
+        if(!target)return;
+        const rect=target.getBoundingClientRect();
+        const x=e.clientX-rect.left, y=e.clientY-rect.top;
+        const max=Math.max(rect.width,rect.height);
+
+        const outer=document.createElement('span');
+        outer.className='ripple-circle';
+        outer.style.left=x+'px'; outer.style.top=y+'px';
+        outer.style.width=outer.style.height=(max*2)+'px';
+
+        const inner=document.createElement('span');
+        inner.className='ripple-circle-inner';
+        inner.style.left=x+'px'; inner.style.top=y+'px';
+        inner.style.width=inner.style.height=(max*1.4)+'px';
+
+        target.appendChild(outer);
+        target.appendChild(inner);
+        setTimeout(()=>outer.remove(),800);
+        setTimeout(()=>inner.remove(),800);
+      });
     }
 
     // ===================== DOM / 事件绑定 =====================
@@ -2769,34 +2855,21 @@
         const intensity = Math.abs(Math.sin(cur * 2.3));
         audioLevel = 0.3 + 0.7 * intensity * (dom.audio.volume || 1);
         updateLyricsHighlight(cur);
-        updateMediaSessionPositionState();
       });
       dom.audio.addEventListener('play',()=>{
         state.isPlaying=true;
         dom.playBtn.textContent='⏸';
         dom.playerStatus.textContent=t('playerStatusPlaying');
-        updateMediaSessionPlaybackState();
-      });
-      dom.audio.addEventListener('playing',()=>{
-        // iOS 上在真正开始播放后再注册一次，锁屏更容易出现上一首/下一首。
-        bindMediaSessionActions();
-        updateMediaSessionMetadata();
-        updateMediaSessionPlaybackState();
-        updateMediaSessionPositionState();
       });
       dom.audio.addEventListener('pause',()=>{
         state.isPlaying=false;
         dom.playBtn.textContent='▶';
         dom.playerStatus.textContent=t('playerStatusPaused');
         audioLevel = 0;
-        updateMediaSessionPlaybackState();
       });
       dom.audio.addEventListener('ended',()=>{
         audioLevel = 0;
         playNext('next');
-      });
-      dom.audio.addEventListener('loadedmetadata',()=>{
-        updateMediaSessionPositionState();
       });
 
       dom.progressWrapper.addEventListener('click',e=>{
@@ -2804,7 +2877,6 @@
         const r=(e.clientX-rect.left)/rect.width;
         const dur=dom.audio.duration||0;
         dom.audio.currentTime=Math.max(0,Math.min(dur,dur*r));
-        updateMediaSessionPositionState();
       });
 
       document.querySelectorAll('.playlist-tab').forEach(tab=>{
@@ -2874,6 +2946,11 @@
         if((e.key==='n'||e.key==='N')&&!typing)playNext('next');
         if((e.key==='p'||e.key==='P')&&!typing)playNext('prev');
         if((e.key==='f'||e.key==='F')&&!typing)toggleFavoriteCurrent();
+        if((e.key==='l'||e.key==='L')&&!typing){
+          state.lyricsAlt=!state.lyricsAlt;
+          dom.lyricsContainer.classList.toggle('alt-style',state.lyricsAlt);
+          showToast(t('toastLyricStyleSwitched'));
+        }
         if((e.key==='m'||e.key==='M')&&!typing){
           state.muted=!state.muted;
           dom.audio.muted=state.muted;
@@ -2888,8 +2965,8 @@
       setupDOM();
       try{const lg=localStorage.getItem('pikachu-music-lang'); if(lg)state.language=lg;}catch(e){}
       setupParticles();
+      setupRipple();
       setupEvents();
-      setupMediaSession();
       setLanguage(state.language);
       setPlaymodeUI();
       dom.audio.volume=parseFloat(dom.volumeSlider.value);
