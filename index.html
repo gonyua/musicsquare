@@ -4,13 +4,23 @@
   <meta charset="UTF-8" />
   <title>音乐站</title>
   <meta name="referrer" content="no-referrer" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="description" content="MusicSquare 音乐站，支持多平台音乐搜索、播放、收藏与歌单管理。" />
+  <meta name="theme-color" content="#02030a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="音乐站" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="icon" href="./icons/app-icon.svg" type="image/svg+xml" />
+  <link rel="icon" href="./icons/icon-192.png" sizes="192x192" type="image/png" />
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
   <!-- 圆润可爱字体 -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600&family=Nunito:wght@400;600&display=swap" rel="stylesheet">
   <style>
     :root {
+      color-scheme: dark;
       --bg-dark: #02030a;
       --panel-glass: rgba(8, 10, 26, 0.26);
       --panel-glass-soft: rgba(10, 14, 35, 0.26);
@@ -79,6 +89,17 @@
     }
     @media (max-width: 900px) {
       .app { margin: 16px; height: calc(100vh - 32px); }
+      .header-controls { gap: 10px; }
+      .shortcut-hint {
+        order: 3;
+        max-width: none;
+        width: 100%;
+      }
+      .header-status-group {
+        width: 100%;
+        margin-left: 0;
+        justify-content: space-between;
+      }
     }
 
     .ripple-target,
@@ -114,11 +135,33 @@
     .lang-toggle {
       display: inline-flex;
       order: 3;
-      margin-left: auto;
+      margin-left: 0;
       border-radius: 999px;
       padding: 2px;
       border: 1px solid rgba(255,255,255,0.18);
       background: rgba(0,0,0,0.4);
+    }
+    .header-status-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-left: auto;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+    .chip-active {
+      color: var(--accent-green);
+      border-color: rgba(101,247,196,0.32);
+      background: rgba(14,78,59,0.45);
+    }
+    .chip-offline {
+      color: #ffe0a3;
+      border-color: rgba(255,196,120,0.32);
+      background: rgba(92,56,6,0.45);
+    }
+    #install-app-btn[hidden],
+    #app-mode-chip[hidden] {
+      display: none !important;
     }
     .lang-btn {
       border: none;
@@ -1122,14 +1165,19 @@
   <div class="app">
     <header class="ripple-target">
       <div class="header-controls">
-        <div class="lang-toggle ripple-target">
-          <button class="lang-btn active" data-lang="zh">中</button>
-          <button class="lang-btn" data-lang="en">EN</button>
-        </div>
         <div class="shortcut-hint" data-i18n="shortcutHint">
           快捷键：Space 播放/暂停 · ←/→ 跳转 · ↑/↓ 音量 · N/P 切歌 · F 收藏 · L 切换歌词效果
         </div>
         <button id="shortcut-toggle-btn" class="shortcut-toggle-btn ripple-target" title="快捷键说明">⌨️</button>
+        <div class="header-status-group">
+          <button id="install-app-btn" class="btn btn-secondary ripple-target" hidden data-i18n="installApp">安装应用</button>
+          <span id="network-chip" class="chip">在线</span>
+          <span id="app-mode-chip" class="chip chip-active" hidden>已安装</span>
+          <div class="lang-toggle ripple-target">
+            <button class="lang-btn active" data-lang="zh">中</button>
+            <button class="lang-btn" data-lang="en">EN</button>
+          </div>
+        </div>
       </div>
     </header>
 
@@ -1445,10 +1493,19 @@
         toastPlaymodeShuffle:"播放模式：随机播放",
         toastNeedPlaylistSelected:"请先选择一个歌单。",
         toastNoCurrentTrack:"当前没有正在播放的歌曲。",
+        toastOfflineReady:"应用外壳已缓存，可离线打开界面。",
+        toastUpdateReady:"检测到新版本，重新打开页面后会生效。",
+        toastInstallAccepted:"安装请求已提交。",
+        toastInstallDismissed:"已取消安装。",
+        toastInstallIOS:"请在 Safari 中点击“分享”，再选择“添加到主屏幕”。",
         sourceMigu:"咪咕",
         sourceNetease:"网易云",
         sourceQQ:"QQ音乐",
         sourceKuwo:"酷我",
+        installApp:"安装应用",
+        networkOnline:"在线",
+        networkOffline:"离线",
+        appInstalled:"已安装",
         modalNewPlaylistTitle:"新建歌单",
         modalNewPlaylistDesc:"给你的歌单取一个可爱的名字吧～",
         modalConfirm:"确定",
@@ -1513,10 +1570,19 @@
         toastPlaymodeShuffle:"Play mode: shuffle",
         toastNeedPlaylistSelected:"Please select a playlist first.",
         toastNoCurrentTrack:"No track is currently playing.",
+        toastOfflineReady:"App shell cached for offline launch.",
+        toastUpdateReady:"A new version is ready and will apply next time you open the page.",
+        toastInstallAccepted:"Install request accepted.",
+        toastInstallDismissed:"Install canceled.",
+        toastInstallIOS:"In Safari, tap Share and then Add to Home Screen.",
         sourceMigu:"Migu",
         sourceNetease:"Netease",
         sourceQQ:"QQ Music",
         sourceKuwo:"Kuwo",
+        installApp:"Install App",
+        networkOnline:"Online",
+        networkOffline:"Offline",
+        appInstalled:"Installed",
         modalNewPlaylistTitle:"Create Playlist",
         modalNewPlaylistDesc:"Give your playlist a cute name!",
         modalConfirm:"Confirm",
@@ -1545,7 +1611,8 @@
       searchInProgress:false,
       noMoreResults:false,
       lyricsAlt:false,
-      muted:false
+      muted:false,
+      deferredInstallPrompt:null
     };
 
     const dom = {};
@@ -1563,6 +1630,105 @@
       if(!isFinite(sec)||sec<0)sec=0;
       const m=Math.floor(sec/60);const s=Math.floor(sec%60);
       return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+    }
+
+    function isStandaloneMode(){
+      return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone===true;
+    }
+
+    function isIOSDevice(){
+      return /iphone|ipad|ipod/i.test(window.navigator.userAgent||'');
+    }
+
+    function updateNetworkStatus(){
+      if(!dom.networkChip)return;
+      const online = typeof navigator==='undefined' ? true : navigator.onLine;
+      dom.networkChip.textContent = online ? t('networkOnline') : t('networkOffline');
+      dom.networkChip.classList.toggle('chip-offline', !online);
+    }
+
+    function updatePWAUI(){
+      if(dom.appModeChip){
+        dom.appModeChip.hidden = !isStandaloneMode();
+        dom.appModeChip.textContent = t('appInstalled');
+      }
+      if(dom.installAppBtn){
+        const shouldShowInstall = !isStandaloneMode() && (!!state.deferredInstallPrompt || isIOSDevice());
+        dom.installAppBtn.hidden = !shouldShowInstall;
+      }
+    }
+
+    async function handleInstallApp(){
+      if(isStandaloneMode()) return;
+
+      if(state.deferredInstallPrompt){
+        const promptEvent = state.deferredInstallPrompt;
+        state.deferredInstallPrompt = null;
+        updatePWAUI();
+        await promptEvent.prompt();
+        const result = await promptEvent.userChoice.catch(()=>null);
+        if(result?.outcome === 'accepted') showToast(t('toastInstallAccepted'));
+        else showToast(t('toastInstallDismissed'));
+        return;
+      }
+
+      if(isIOSDevice()){
+        showToast(t('toastInstallIOS'));
+      }
+    }
+
+    async function registerServiceWorker(){
+      if(typeof navigator==='undefined' || !('serviceWorker' in navigator)) return;
+      try{
+        const registration = await navigator.serviceWorker.register('./service-worker.js');
+        if(registration.waiting){
+          showToast(t('toastUpdateReady'));
+        }
+        registration.addEventListener('updatefound',()=>{
+          const nextWorker = registration.installing;
+          if(!nextWorker) return;
+          nextWorker.addEventListener('statechange',()=>{
+            if(nextWorker.state!=='installed') return;
+            if(navigator.serviceWorker.controller) showToast(t('toastUpdateReady'));
+            else showToast(t('toastOfflineReady'));
+          });
+        });
+      }catch(error){
+        console.warn('service worker registration failed', error);
+      }
+    }
+
+    function setupPWA(){
+      updateNetworkStatus();
+      updatePWAUI();
+
+      window.addEventListener('online', updateNetworkStatus);
+      window.addEventListener('offline', updateNetworkStatus);
+
+      if(dom.installAppBtn){
+        dom.installAppBtn.addEventListener('click', handleInstallApp);
+      }
+
+      window.addEventListener('beforeinstallprompt', event=>{
+        event.preventDefault();
+        state.deferredInstallPrompt = event;
+        updatePWAUI();
+      });
+
+      window.addEventListener('appinstalled', ()=>{
+        state.deferredInstallPrompt = null;
+        updatePWAUI();
+        showToast(t('appInstalled'));
+      });
+
+      if(window.matchMedia){
+        const mediaQuery = window.matchMedia('(display-mode: standalone)');
+        const onModeChange = ()=>updatePWAUI();
+        if(typeof mediaQuery.addEventListener==='function') mediaQuery.addEventListener('change', onModeChange);
+        else if(typeof mediaQuery.addListener==='function') mediaQuery.addListener(onModeChange);
+      }
+
+      registerServiceWorker();
     }
 
     function hasMediaSessionSupport(){
@@ -1690,6 +1856,8 @@
         ? '例如：通勤歌单 / 宝可梦歌单'
         : 'e.g. Commute mix / Pokemon list';
       updatePlaylistInfoLabel();
+      updateNetworkStatus();
+      updatePWAUI();
     }
 
     // ========== 旧的质量映射函数，暂时保留（不再使用 API 的 quality 字段） ==========
@@ -2730,6 +2898,9 @@
       dom.shortcutToggleBtn=$('shortcut-toggle-btn');
       dom.shortcutModal=$('shortcut-modal');
       dom.shortcutCloseBtn=$('shortcut-close');
+      dom.installAppBtn=$('install-app-btn');
+      dom.networkChip=$('network-chip');
+      dom.appModeChip=$('app-mode-chip');
     }
 
     function setPlaymodeUI(){
@@ -2947,6 +3118,7 @@
       setLanguage(state.language);
       setPlaymodeUI();
       dom.audio.volume=parseFloat(dom.volumeSlider.value);
+      setupPWA();
     }
 
     document.addEventListener('DOMContentLoaded',init);
