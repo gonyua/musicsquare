@@ -804,6 +804,29 @@
       font-weight:600;
       box-shadow:0 0 8px rgba(104,174,255,0.7);
     }
+    .playlist-header-actions {
+      display:flex;
+      align-items:center;
+      gap:8px;
+      min-width:0;
+    }
+    .btn-small {
+      padding:4px 10px;
+      font-size:11px;
+      line-height:1;
+    }
+    .btn-import {
+      background:linear-gradient(135deg, rgba(95,180,255,0.2), rgba(255,196,120,0.18));
+      border:1px solid rgba(140,205,255,0.28);
+      color:var(--text-main);
+      box-shadow:0 0 12px rgba(100,178,255,0.32);
+    }
+    .btn-import:disabled {
+      opacity:.6;
+      cursor:not-allowed;
+      transform:none;
+      box-shadow:none;
+    }
 
     /* 让 playlist-main 内部滚动，顶部条 sticky 不再消失 */
     .playlist-main {
@@ -1078,6 +1101,31 @@
       outline:none;
       margin-bottom:10px;
     }
+    .modal textarea {
+      width:100%;
+      min-height:168px;
+      padding:10px 12px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,0.22);
+      background:rgba(4,6,20,0.96);
+      color:var(--text-main);
+      font-size:12px;
+      line-height:1.5;
+      outline:none;
+      margin-bottom:10px;
+      resize:vertical;
+      font-family: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
+    }
+    .modal-hint {
+      font-size:11px;
+      color:var(--text-sub);
+      margin:-2px 0 10px;
+      line-height:1.45;
+    }
+    .modal-hint code {
+      font-size:11px;
+      color:#ffe7b3;
+    }
     .modal-actions {
       display:flex;
       justify-content:flex-end;
@@ -1311,10 +1359,13 @@
             <span class="icon">📜</span>
             <span data-i18n="playlistTitle">播放列表</span>
           </div>
-          <div class="playlist-tabs ripple-target">
-            <div class="playlist-tab active" data-tab="results" data-i18n="tabResults">搜索结果</div>
-            <div class="playlist-tab" data-tab="favorites" data-i18n="tabFavorites">我的收藏</div>
-            <div class="playlist-tab" data-tab="playlists" data-i18n="tabCustomLists">自建歌单</div>
+          <div class="playlist-header-actions">
+            <div class="playlist-tabs ripple-target">
+              <div class="playlist-tab active" data-tab="results" data-i18n="tabResults">搜索结果</div>
+              <div class="playlist-tab" data-tab="favorites" data-i18n="tabFavorites">我的收藏</div>
+              <div class="playlist-tab" data-tab="playlists" data-i18n="tabCustomLists">自建歌单</div>
+            </div>
+            <button id="import-playlist-btn" class="btn btn-ghost btn-small btn-import ripple-target" data-i18n="importPlaylist">导入</button>
           </div>
         </div>
 
@@ -1359,6 +1410,31 @@
       <div class="modal-actions">
         <button id="playlist-cancel-btn" class="btn btn-ghost ripple-target" data-i18n="modalCancel">取消</button>
         <button id="playlist-confirm-btn" class="btn btn-secondary ripple-target" data-i18n="modalConfirm">确定</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="import-modal" class="modal-backdrop">
+    <div class="modal ripple-target">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <div class="modal-title-icon">⇪</div>
+          <span data-i18n="modalImportTitle">导入歌单</span>
+        </div>
+        <button id="import-close" class="modal-close-btn">×</button>
+      </div>
+      <p class="modal-desc" data-i18n="modalImportDesc">粘贴 JSON 数组后，将按当前平台顺序自动匹配并创建一个新的自建歌单。</p>
+      <input id="import-playlist-name-input" type="text" placeholder="例如：夜跑歌单 / JSON 导入" />
+      <textarea id="import-json-input" placeholder='[
+  {
+    "artist": "Ava Max",
+    "title": "Sweet but Psycho"
+  }
+]'></textarea>
+      <p class="modal-hint" data-i18n="modalImportHint">每项至少包含 artist 和 title；若当前未勾选平台，则会按默认顺序全平台匹配。</p>
+      <div class="modal-actions">
+        <button id="import-cancel-btn" class="btn btn-ghost ripple-target" data-i18n="modalCancel">取消</button>
+        <button id="import-confirm-btn" class="btn btn-secondary ripple-target" data-i18n="modalImportConfirm">开始导入</button>
       </div>
     </div>
   </div>
@@ -1462,6 +1538,7 @@
         playlistInfoFavorites:"收藏列表",
         playlistInfoPlaylist:"歌单",
         newPlaylist:"新建歌单",
+        importPlaylist:"导入",
         footerText:"本站仅作为学习演示，音乐版权归各平台与原作者所有。",
         toastAddedFavorite:"已添加到收藏",
         toastRemovedFavorite:"已从收藏移除",
@@ -1485,6 +1562,10 @@
         toastInstallAccepted:"安装请求已提交。",
         toastInstallDismissed:"已取消安装。",
         toastInstallIOS:"请在 Safari 中点击“分享”，再选择“添加到主屏幕”。",
+        toastImportInvalidJSON:"导入失败：JSON 格式不正确。",
+        toastImportEmpty:"导入内容为空，至少需要一首歌。",
+        toastImportNoMatch:"没有匹配到可导入的歌曲。",
+        toastImportNoNew:"目标歌单里没有可新增的歌曲。",
         sourceMigu:"咪咕",
         sourceNetease:"网易云",
         sourceQQ:"QQ音乐",
@@ -1495,6 +1576,10 @@
         appInstalled:"已安装",
         modalNewPlaylistTitle:"新建歌单",
         modalNewPlaylistDesc:"给你的歌单取一个可爱的名字吧～",
+        modalImportTitle:"导入歌单",
+        modalImportDesc:"粘贴 JSON 数组后，将按当前平台顺序自动匹配并创建或补充同名自建歌单。",
+        modalImportHint:"每项至少包含 artist 和 title；同名歌单会按 artist + title 判重，仅补充新增歌曲。",
+        modalImportConfirm:"开始导入",
         modalConfirm:"确定",
         modalCancel:"取消"
       },
@@ -1539,6 +1624,7 @@
         playlistInfoFavorites:"Favorites List",
         playlistInfoPlaylist:"Playlist",
         newPlaylist:"Create",
+        importPlaylist:"Import",
         footerText:"For demo only. All music copyrights belong to original owners.",
         toastAddedFavorite:"Added to favorites",
         toastRemovedFavorite:"Removed from favorites",
@@ -1562,6 +1648,10 @@
         toastInstallAccepted:"Install request accepted.",
         toastInstallDismissed:"Install canceled.",
         toastInstallIOS:"In Safari, tap Share and then Add to Home Screen.",
+        toastImportInvalidJSON:"Import failed: invalid JSON format.",
+        toastImportEmpty:"Nothing to import. Add at least one song.",
+        toastImportNoMatch:"No matching tracks were found for import.",
+        toastImportNoNew:"No new tracks were added to this playlist.",
         sourceMigu:"Migu",
         sourceNetease:"Netease",
         sourceQQ:"QQ Music",
@@ -1572,6 +1662,10 @@
         appInstalled:"Installed",
         modalNewPlaylistTitle:"Create Playlist",
         modalNewPlaylistDesc:"Give your playlist a cute name!",
+        modalImportTitle:"Import Playlist",
+        modalImportDesc:"Paste a JSON array to auto-match tracks in the current source order and create or update a playlist with the same name.",
+        modalImportHint:"Each item needs artist and title; duplicate checks in the same playlist use artist + title and only new songs are added.",
+        modalImportConfirm:"Import Now",
         modalConfirm:"Confirm",
         modalCancel:"Cancel"
       }
@@ -1608,7 +1702,8 @@
       noMoreResults:false,
       lyricsAlt:false,
       muted:false,
-      deferredInstallPrompt:null
+      deferredInstallPrompt:null,
+      importInProgress:false
     };
 
     const dom = {};
@@ -1627,6 +1722,13 @@
       toast.textContent=msg;
       toast.classList.add('show');
       setTimeout(()=>toast.classList.remove('show'),2000);
+    }
+    function createPlaylistRecord(name,tracks){
+      return {
+        id:'pl-'+Date.now()+'-'+Math.random().toString(16).slice(2),
+        name:name||'',
+        tracks:Array.isArray(tracks)?tracks:[]
+      };
     }
     function formatTime(sec){
       if(!isFinite(sec)||sec<0)sec=0;
@@ -1661,7 +1763,8 @@
         quality:track.quality||null,
         qualityLabel:track.qualityLabel||null,
         pay:track.pay||null,
-        qqQualityText:track.qqQualityText||null
+        qqQualityText:track.qqQualityText||null,
+        importKey:track.importKey||''
       };
     }
 
@@ -2006,6 +2109,14 @@
       dom.playlistNameInput.placeholder = lang==='zh'
         ? '例如：通勤歌单 / 宝可梦歌单'
         : 'e.g. Commute mix / Pokemon list';
+      if(dom.importPlaylistNameInput){
+        dom.importPlaylistNameInput.placeholder = lang==='zh'
+          ? '例如：夜跑歌单 / JSON 导入'
+          : 'e.g. Night run mix / JSON import';
+      }
+      if(dom.importJsonInput){
+        dom.importJsonInput.placeholder='[\n  {\n    "artist": "Ava Max",\n    "title": "Sweet but Psycho"\n  }\n]';
+      }
       renderPlaylistOptions();
       renderPlaylistList();
       updatePlaylistInfoLabel();
@@ -2238,6 +2349,189 @@
         console.error('kuwo search',e);
       }
       return added;
+    }
+
+    async function fetchMiguCandidates(kw,limit){
+      const url=`https://api.xcvts.cn/api/music/migu?gm=${encodeURIComponent(kw)}&n=&num=${encodeURIComponent(limit)}&type=json`;
+      try{
+        const res=await fetch(url);
+        const json=await res.json();
+        if(json.code!==200||!Array.isArray(json.data)) return [];
+        return json.data.map(it=>({
+          uid:`migu-${kw}-${it.n}-${it.title}-${it.singer}`,
+          source:'migu',
+          displayIndex:it.n||0,
+          keyword:kw,
+          requestNum:limit,
+          title:it.title||'',
+          artist:it.singer||'',
+          album:'',
+          cover:null,
+          audioUrl:null,
+          lrc:null,
+          lrcUrl:null,
+          detailsLoaded:false,
+          quality:null,
+          qualityLabel:null
+        }));
+      }catch(e){
+        console.error('migu import',e);
+        return [];
+      }
+    }
+
+    async function fetchNeteaseCandidates(kw,limit){
+      const url=`https://api.vkeys.cn/v2/music/netease?word=${encodeURIComponent(kw)}&page=1&num=${encodeURIComponent(limit)}`;
+      try{
+        const res=await fetch(url);
+        const json=await res.json();
+        if(json.code!==200||!Array.isArray(json.data)) return [];
+        return json.data.map((it,idx)=>({
+          uid:`netease-${it.id}`,
+          source:'netease',
+          displayIndex:idx+1,
+          keyword:kw,
+          songid:it.id,
+          title:it.song||'',
+          artist:it.singer||'',
+          album:it.album||'',
+          cover:it.cover||null,
+          audioUrl:null,
+          lrc:null,
+          lrcUrl:null,
+          detailsLoaded:false,
+          quality:null,
+          qualityLabel:null
+        }));
+      }catch(e){
+        console.error('netease import',e);
+        return [];
+      }
+    }
+
+    async function fetchQQCandidates(kw,limit){
+      const url=`https://tang.api.s01s.cn/music_open_api.php?msg=${encodeURIComponent(kw)}&type=json`;
+      try{
+        const res=await fetch(url);
+        const json=await res.json();
+        const data=Array.isArray(json) ? json : (Array.isArray(json?.data) ? json.data : []);
+        return data.slice(0,limit).map((it,idx)=>({
+          uid:`qq-${it.song_mid}`,
+          source:'qq',
+          displayIndex:idx+1,
+          keyword:kw,
+          qqSearchKey:kw,
+          qqIndex:idx+1,
+          qqId:it.song_mid,
+          songid:it.song_mid,
+          songMid:it.song_mid,
+          title:it.song_title||'',
+          artist:it.singer_name||'',
+          album:'',
+          cover:null,
+          audioUrl:null,
+          lrc:null,
+          lrcUrl:null,
+          detailsLoaded:false,
+          quality:null,
+          qualityLabel:null,
+          qqQualityText:it.pay||null,
+          pay:it.pay||null
+        })).filter(track=>track.songMid);
+      }catch(e){
+        console.error('qq import',e);
+        return [];
+      }
+    }
+
+    async function fetchKuwoCandidates(kw,limit){
+      const url=`https://kw-api.cenguigui.cn/?name=${encodeURIComponent(kw)}&page=1&limit=${encodeURIComponent(limit)}`;
+      try{
+        const res=await fetch(url);
+        const json=await res.json();
+        if(json.code!==200 || !Array.isArray(json.data)) return [];
+        return json.data.map((it,idx)=>({
+          uid:`kuwo-${it.rid}`,
+          source:'kuwo',
+          displayIndex:idx+1,
+          keyword:kw,
+          songid:it.rid,
+          title:it.name||'',
+          artist:it.artist||'',
+          album:it.album||'',
+          cover:it.pic||null,
+          audioUrl:null,
+          lrc:null,
+          lrcUrl:null,
+          detailsLoaded:false,
+          quality:null,
+          qualityLabel:null
+        }));
+      }catch(e){
+        console.error('kuwo import',e);
+        return [];
+      }
+    }
+
+    async function fetchCandidatesForSource(source,kw,limit){
+      if(source==='netease') return fetchNeteaseCandidates(kw,limit);
+      if(source==='qq') return fetchQQCandidates(kw,limit);
+      if(source==='kuwo') return fetchKuwoCandidates(kw,limit);
+      return fetchMiguCandidates(kw,limit);
+    }
+
+    function normalizeCompareText(value){
+      return (value||'')
+        .toString()
+        .toLowerCase()
+        .replace(/[^\p{L}\p{N}]+/gu,'');
+    }
+
+    function buildArtistTitleKey(artist,title){
+      return `${normalizeCompareText(artist)}::${normalizeCompareText(title)}`;
+    }
+
+    function getTrackArtistTitleKey(track){
+      if(!track) return '';
+      return track.importKey || buildArtistTitleKey(track.artist,track.title);
+    }
+
+    function scoreImportedCandidate(track,item){
+      const targetTitle=normalizeCompareText(item.title);
+      const targetArtist=normalizeCompareText(item.artist);
+      const trackTitle=normalizeCompareText(track.title);
+      const trackArtist=normalizeCompareText(track.artist);
+      let score=0;
+      if(trackTitle===targetTitle) score+=120;
+      else if(trackTitle.includes(targetTitle) || targetTitle.includes(trackTitle)) score+=72;
+      if(trackArtist===targetArtist) score+=80;
+      else if(trackArtist.includes(targetArtist) || targetArtist.includes(trackArtist)) score+=46;
+      if(trackTitle && targetTitle && trackTitle===targetArtist && trackArtist===targetTitle){
+        score-=40;
+      }
+      return score;
+    }
+
+    async function resolveImportedTrack(item,sources){
+      const keyword=[item.title,item.artist].filter(Boolean).join(' ');
+      const groups=await Promise.all(
+        sources.map(async source=>({
+          source,
+          tracks:await fetchCandidatesForSource(source,keyword,6)
+        }))
+      );
+      let bestTrack=null;
+      let bestScore=-1;
+      groups.forEach(group=>{
+        group.tracks.forEach(track=>{
+          const score=scoreImportedCandidate(track,item);
+          if(score>bestScore){
+            bestScore=score;
+            bestTrack=track;
+          }
+        });
+      });
+      return bestScore>0 ? bestTrack : null;
     }
 
     // ===================== 聚合搜索 =====================
@@ -2921,6 +3215,25 @@
 
     // ===================== 歌单弹窗 =====================
 
+    function setPlaylistTab(tabName){
+      document.querySelectorAll('.playlist-tab').forEach(tab=>{
+        tab.classList.toggle('active',tab.dataset.tab===tabName);
+      });
+      if(tabName==='results'){
+        state.playContext.type='results';
+        state.playContext.playlistId=null;
+      }else if(tabName==='favorites'){
+        state.playContext.type='favorites';
+        state.playContext.playlistId=null;
+      }else{
+        state.playContext.type='playlist';
+        if(state.playlists.length){
+          state.playContext.playlistId=dom.playlistSelect.value||state.playContext.playlistId||state.playlists[0].id;
+        }
+      }
+      renderPlaylistList();
+    }
+
     function openPlaylistModal(){
       dom.playlistModal.classList.add('show');
       dom.playlistNameInput.value='';
@@ -2929,11 +3242,163 @@
     function closePlaylistModal(){
       dom.playlistModal.classList.remove('show');
     }
+    function buildImportedPlaylistName(){
+      return state.language==='zh' ? 'JSON 导入歌单' : 'Imported Playlist';
+    }
+    function openImportModal(){
+      dom.importModal.classList.add('show');
+      dom.importPlaylistNameInput.value=buildImportedPlaylistName();
+      dom.importJsonInput.value='';
+      setImportLoading(false);
+      setTimeout(()=>dom.importJsonInput.focus(),50);
+    }
+    function closeImportModal(){
+      if(state.importInProgress) return;
+      dom.importModal.classList.remove('show');
+    }
+    function setImportLoading(loading){
+      state.importInProgress=loading;
+      dom.importConfirmBtn.disabled=loading;
+      dom.importCancelBtn.disabled=loading;
+      dom.importCloseBtn.disabled=loading;
+      dom.importPlaylistBtn.disabled=loading;
+      dom.importConfirmBtn.textContent=loading
+        ? (state.language==='zh'?'导入中…':'Importing…')
+        : t('modalImportConfirm');
+    }
+    function parseImportedEntries(raw){
+      let parsed;
+      try{
+        parsed=JSON.parse(raw);
+      }catch(e){
+        throw new Error('invalid_json');
+      }
+      if(!Array.isArray(parsed)) throw new Error('invalid_json');
+      const entries=parsed
+        .map(item=>({
+          importKey:buildArtistTitleKey(
+            typeof item?.artist==='string' ? item.artist.trim() : '',
+            typeof item?.title==='string' ? item.title.trim() : ''
+          ),
+          title:typeof item?.title==='string' ? item.title.trim() : '',
+          artist:typeof item?.artist==='string' ? item.artist.trim() : ''
+        }))
+        .filter(item=>item.title && item.artist && item.importKey!=='::');
+      if(!entries.length) throw new Error('empty_entries');
+      return entries;
+    }
+    function getImportSources(){
+      const enabled=SOURCE_ORDER.filter(source=>state.enabledSources[source]);
+      return enabled.length ? enabled : SOURCE_ORDER;
+    }
+    function findPlaylistByName(name){
+      const nextName=(name||'').trim();
+      return state.playlists.find(pl=>(pl.name||'').trim()===nextName)||null;
+    }
+    function getImportResultToast(importedCount,totalCount,playlistName){
+      if(state.language==='zh'){
+        return `已为${playlistName}新增 ${importedCount}/${totalCount} 首歌曲`;
+      }
+      return `${importedCount}/${totalCount} tracks were added to ${playlistName}`;
+    }
+    async function importPlaylistFromJSON(){
+      if(state.importInProgress) return;
+      let entries;
+      try{
+        entries=parseImportedEntries(dom.importJsonInput.value.trim());
+      }catch(error){
+        showToast(
+          error.message==='empty_entries'
+            ? t('toastImportEmpty')
+            : t('toastImportInvalidJSON')
+        );
+        return;
+      }
+
+      setImportLoading(true);
+      try{
+        const sources=getImportSources();
+        const name=dom.importPlaylistNameInput.value.trim() || buildImportedPlaylistName();
+        const existingPlaylist=findPlaylistByName(name);
+        const targetPlaylist=existingPlaylist||createPlaylistRecord(name,[]);
+        let playlistTouched=false;
+        const existingKeys=new Set(
+          (Array.isArray(targetPlaylist.tracks)?targetPlaylist.tracks:[])
+            .map(track=>{
+              const importKey=getTrackArtistTitleKey(track);
+              if(track && importKey && !track.importKey){
+                track.importKey=importKey;
+                playlistTouched=true;
+              }
+              return importKey;
+            })
+            .filter(Boolean)
+        );
+        const pendingEntries=[];
+        const seenImportKeys=new Set(existingKeys);
+
+        entries.forEach(entry=>{
+          if(seenImportKeys.has(entry.importKey)) return;
+          seenImportKeys.add(entry.importKey);
+          pendingEntries.push(entry);
+        });
+
+        if(!pendingEntries.length){
+          if(existingPlaylist && playlistTouched){
+            savePlaylists();
+          }
+          setImportLoading(false);
+          closeImportModal();
+          renderPlaylistOptions();
+          dom.playlistSelect.value=targetPlaylist.id;
+          state.playContext.playlistId=targetPlaylist.id;
+          setPlaylistTab('playlists');
+          showToast(t('toastImportNoNew'));
+          return;
+        }
+
+        const existingUids=new Set(
+          (Array.isArray(targetPlaylist.tracks)?targetPlaylist.tracks:[])
+            .map(track=>track?.uid)
+            .filter(Boolean)
+        );
+        const tracksToAdd=[];
+        for(const entry of pendingEntries){
+          const track=await resolveImportedTrack(entry,sources);
+          if(track && !existingUids.has(track.uid)){
+            existingUids.add(track.uid);
+            track.importKey=entry.importKey;
+            tracksToAdd.push(track);
+          }
+        }
+
+        if(!tracksToAdd.length){
+          showToast(t('toastImportNoMatch'));
+          return;
+        }
+
+        targetPlaylist.tracks.push(...tracksToAdd);
+        if(!existingPlaylist){
+          state.playlists.push(targetPlaylist);
+        }
+        savePlaylists();
+        renderPlaylistOptions();
+        dom.playlistSelect.value=targetPlaylist.id;
+        state.playContext.playlistId=targetPlaylist.id;
+        setImportLoading(false);
+        closeImportModal();
+        setPlaylistTab('playlists');
+        showToast(getImportResultToast(tracksToAdd.length,pendingEntries.length,name));
+      } finally {
+        if(state.importInProgress){
+          setImportLoading(false);
+        }
+      }
+    }
     function createPlaylist(){
       let name=dom.playlistNameInput.value.trim();
       if(!name)name=state.language==='zh'?'未命名歌单':'Untitled Playlist';
-      const id='pl-'+Date.now()+'-'+Math.random().toString(16).slice(2);
-      const pl={id,name,tracks:[]};
+      const pl=createPlaylistRecord(name,[]);
       state.playlists.push(pl);
       savePlaylists();
       renderPlaylistOptions();
@@ -3011,12 +3476,19 @@
       dom.playlistSelect=$('playlist-select');
       dom.newPlaylistBtn=$('new-playlist-btn');
       dom.addCurrentBtn=$('add-current-btn');
+      dom.importPlaylistBtn=$('import-playlist-btn');
 
       dom.playlistModal=$('playlist-modal');
       dom.playlistNameInput=$('playlist-name-input');
       dom.playlistConfirmBtn=$('playlist-confirm-btn');
       dom.playlistCancelBtn=$('playlist-cancel-btn');
       dom.playlistCloseBtn=$('playlist-close');
+      dom.importModal=$('import-modal');
+      dom.importPlaylistNameInput=$('import-playlist-name-input');
+      dom.importJsonInput=$('import-json-input');
+      dom.importConfirmBtn=$('import-confirm-btn');
+      dom.importCancelBtn=$('import-cancel-btn');
+      dom.importCloseBtn=$('import-close');
 
       dom.shortcutToggleBtn=$('shortcut-toggle-btn');
       dom.shortcutModal=$('shortcut-modal');
@@ -3154,19 +3626,7 @@
       });
 
       document.querySelectorAll('.playlist-tab').forEach(tab=>{
-        tab.addEventListener('click',()=>{
-          document.querySelectorAll('.playlist-tab').forEach(el=>el.classList.toggle('active',el===tab));
-          const tName=tab.dataset.tab;
-          if(tName==='results'){
-            state.playContext.type='results';state.playContext.playlistId=null;
-          }else if(tName==='favorites'){
-            state.playContext.type='favorites';state.playContext.playlistId=null;
-          }else{
-            state.playContext.type='playlist';
-            if(state.playlists.length&&!state.playContext.playlistId)state.playContext.playlistId=state.playlists[0].id;
-          }
-          renderPlaylistList();
-        });
+        tab.addEventListener('click',()=>setPlaylistTab(tab.dataset.tab));
       });
 
       dom.newPlaylistBtn.addEventListener('click',openPlaylistModal);
@@ -3174,6 +3634,17 @@
       dom.playlistCancelBtn.addEventListener('click',closePlaylistModal);
       dom.playlistCloseBtn.addEventListener('click',closePlaylistModal);
       dom.playlistModal.addEventListener('click',e=>{if(e.target===dom.playlistModal)closePlaylistModal();});
+      dom.importPlaylistBtn.addEventListener('click',openImportModal);
+      dom.importConfirmBtn.addEventListener('click',importPlaylistFromJSON);
+      dom.importCancelBtn.addEventListener('click',closeImportModal);
+      dom.importCloseBtn.addEventListener('click',closeImportModal);
+      dom.importModal.addEventListener('click',e=>{if(e.target===dom.importModal)closeImportModal();});
+      dom.importJsonInput.addEventListener('keydown',e=>{
+        if((e.metaKey||e.ctrlKey) && e.key==='Enter'){
+          e.preventDefault();
+          importPlaylistFromJSON();
+        }
+      });
       dom.playlistSelect.addEventListener('change',()=>{
         state.playContext.playlistId=dom.playlistSelect.value;
         renderPlaylistList();
@@ -3198,15 +3669,17 @@
         const tag=document.activeElement.tagName.toLowerCase();
         const typing=(tag==='input'||tag==='textarea');
         const playlistOpen=dom.playlistModal.classList.contains('show');
+        const importOpen=dom.importModal.classList.contains('show');
         const shortcutOpen=dom.shortcutModal.classList.contains('show');
 
         if(e.key==='Escape'){
           if(playlistOpen)closePlaylistModal();
+          if(importOpen)closeImportModal();
           if(shortcutOpen)dom.shortcutModal.classList.remove('show');
           return;
         }
 
-        if(playlistOpen || shortcutOpen){
+        if(playlistOpen || importOpen || shortcutOpen){
           return;
         }
 
