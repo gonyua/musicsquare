@@ -761,6 +761,10 @@
       gap:1px;
       font-size:11px;
     }
+    .open-iphone-app-btn {
+      margin-left:8px;
+      white-space:nowrap;
+    }
     .control-secondary > span {
       display:inline-flex;
       align-items:center;
@@ -1266,6 +1270,13 @@
       .modal input{
         font-size:16px;
       }
+      .control-row{
+        gap:8px;
+        flex-wrap:wrap;
+      }
+      .open-iphone-app-btn{
+        margin-left:4px;
+      }
       /* 手机端下方已有完整搜索结果列表，这里隐藏重复的缩略结果。 */
       .search-results-mini{
         display:none;
@@ -1430,6 +1441,7 @@
                 <div class="control-secondary">
                   <span>🔊</span>
                   <input id="volume-slider" class="volume-slider" type="range" min="0" max="1" step="0.01" value="0.8" />
+                  <button id="open-iphone-app-btn" class="btn btn-secondary open-iphone-app-btn ripple-target" data-i18n="openIphoneApp">打开 iPhone App</button>
                 </div>
               </div>
             </div>
@@ -1444,7 +1456,7 @@
           </div>
         </div>
 
-        <audio id="audio" preload="metadata"></audio>
+        <audio id="audio" preload="auto"></audio>
       </section>
 
       <!-- 右：播放列表 -->
@@ -1666,6 +1678,7 @@
         sourceQQ:"QQ音乐",
         sourceKuwo:"酷我",
         installApp:"安装应用",
+        openIphoneApp:"打开 iPhone App",
         networkOnline:"在线",
         networkOffline:"离线",
         appInstalled:"已安装",
@@ -1752,6 +1765,7 @@
         sourceQQ:"QQ Music",
         sourceKuwo:"Kuwo",
         installApp:"Install App",
+        openIphoneApp:"Open iPhone App",
         networkOnline:"Online",
         networkOffline:"Offline",
         appInstalled:"Installed",
@@ -1767,6 +1781,7 @@
     };
 
     const SOURCE_ORDER = ['netease','qq','kuwo','migu'];
+    const IPHONE_APP_SCHEME = 'SenPlayer://';
 
     function getDefaultEnabledSources(){
       return SOURCE_ORDER.reduce((acc,source)=>{
@@ -1803,6 +1818,8 @@
 
     const dom = {};
     let audioLevel = 0;
+    let nextTrackPrepareToken = 0;
+    let nextAudioWarmup = null;
     const STORAGE_KEYS = {
       language:'pikachu-music-lang',
       enabledSources:'pikachu-music-enabled-sources',
@@ -2024,6 +2041,10 @@
       if(isIOSDevice()){
         showToast(t('toastInstallIOS'));
       }
+    }
+
+    function openIphoneApp(){
+      window.location.href = IPHONE_APP_SCHEME;
     }
 
     async function registerServiceWorker(){
@@ -2866,9 +2887,14 @@
       }
     }
 
-    async function ensureTrackDetails(track){
+    function isTrackPlayableReady(track){
+      return !!(track && track.audioUrl);
+    }
+
+    async function ensureTrackDetails(track, options){
       if(track.detailsLoaded && track.audioUrl && (track.lrc || !track.lrcUrl)) return;
-      dom.playerStatus.textContent=t('playerStatusLoading');
+      const silent = options && options.silent;
+      if(!silent) dom.playerStatus.textContent=t('playerStatusLoading');
       if(track.source==='migu') await fetchMiguDetails(track);
       else if(track.source==='netease') await fetchNeteaseDetails(track);
       else if(track.source==='kuwo') await fetchKuwoDetails(track);
@@ -2961,6 +2987,7 @@
 
     async function playTrack(track,context){
       if(!track)return;
+      nextTrackPrepareToken++;
       state.currentTrack=track;
       state.playContext=context||state.playContext;
 
@@ -3010,7 +3037,9 @@
       updateMainFavButton();
 
       try{
-        await ensureTrackDetails(track);
+        if(!isTrackPlayableReady(track)){
+          await ensureTrackDetails(track);
+        }
         applyUI();
         updateMediaSessionMetadata();
         state.lyricLines = track.lrc ? parseLRC(track.lrc) : [];
@@ -3021,6 +3050,7 @@
         state.isPlaying=true;
         updateMainPlayButtonIcon(true);
         dom.playerStatus.textContent=t('playerStatusPlaying');
+        prepareUpcomingTrack();
       }catch(e){
         console.error(e);
         showToast(t('toastPlayError'));
@@ -3048,6 +3078,71 @@
       return getInterleavedSearchList();
     }
 
+    function getPlaybackTarget(direction){
+      const list=getActiveList();
+      if(!list.length) return null;
+      let idx=state.playContext.index ?? -1;
+      if(idx<0||idx>=list.length)idx=0;
+
+      if(state.playMode==='single'){
+        return {
+          list,
+          index:idx,
+          track:list[idx],
+          type:state.playContext.type,
+          playlistId:state.playContext.playlistId
+        };
+      }
+
+      if(state.playMode==='shuffle'){
+        if(list.length===1){
+          idx=0;
+        }else{
+          let newIdx;
+          do{ newIdx=Math.floor(Math.random()*list.length); }while(newIdx===idx);
+          idx=newIdx;
+        }
+      }else{
+        idx = (idx + (direction==='prev'?-1:1) + list.length) % list.length;
+      }
+
+      return {
+        list,
+        index:idx,
+        track:list[idx],
+        type:state.playContext.type,
+        playlistId:state.playContext.playlistId
+      };
+    }
+
+    function warmNextAudio(track){
+      if(!track || !track.audioUrl) return;
+      try{
+        if(!nextAudioWarmup) nextAudioWarmup = new Audio();
+        if(nextAudioWarmup.src !== track.audioUrl){
+          nextAudioWarmup.preload='auto';
+          nextAudioWarmup.src=track.audioUrl;
+          nextAudioWarmup.load();
+        }
+      }catch(e){}
+    }
+
+    async function prepareUpcomingTrack(){
+      if(state.playMode!=='list') return;
+      const target=getPlaybackTarget('next');
+      if(!target || !target.track || target.track===state.currentTrack) return;
+      const token=++nextTrackPrepareToken;
+      try{
+        if(!isTrackPlayableReady(target.track)){
+          await ensureTrackDetails(target.track,{silent:true});
+        }
+        if(token!==nextTrackPrepareToken) return;
+        warmNextAudio(target.track);
+      }catch(e){
+        console.warn('prepare next track failed', e);
+      }
+    }
+
     function playFromList(type,index,plId){
       let list;
       if(type==='results') list=getInterleavedSearchList();
@@ -3067,27 +3162,14 @@
     }
 
     function playNext(direction){
-      const list=getActiveList(); if(!list.length)return;
-      let idx=state.playContext.index ?? -1;
-      if(idx<0||idx>=list.length)idx=0;
-
       if(state.playMode==='single'){
         dom.audio.currentTime=0;
         dom.audio.play().catch(()=>{});
         return;
       }
-      if(state.playMode==='shuffle'){
-        if(list.length===1){
-          idx=0;
-        }else{
-          let newIdx;
-          do{ newIdx=Math.floor(Math.random()*list.length); }while(newIdx===idx);
-          idx=newIdx;
-        }
-      }else{
-        idx = (idx + (direction==='prev'?-1:1) + list.length) % list.length;
-      }
-      playFromList(state.playContext.type,idx,state.playContext.playlistId);
+      const target=getPlaybackTarget(direction);
+      if(!target)return;
+      playFromList(target.type,target.index,target.playlistId);
     }
 
     function togglePlayPause(){
@@ -3605,6 +3687,7 @@
       dom.shortcutModal=$('shortcut-modal');
       dom.shortcutCloseBtn=$('shortcut-close');
       dom.installAppBtn=$('install-app-btn');
+      dom.openIphoneAppBtn=$('open-iphone-app-btn');
       dom.networkChip=$('network-chip');
       dom.appModeChip=$('app-mode-chip');
     }
@@ -3619,6 +3702,10 @@
       document.querySelectorAll('.lang-btn').forEach(btn=>{
         btn.addEventListener('click',()=>setLanguage(btn.dataset.lang));
       });
+
+      if(dom.openIphoneAppBtn){
+        dom.openIphoneAppBtn.addEventListener('click',openIphoneApp);
+      }
 
       dom.searchBtn.addEventListener('click',()=>{
         state.searchKeyword=dom.searchInput.value.trim(); state.noMoreResults=false;
