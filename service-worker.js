@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'v2';
+const CACHE_VERSION = 'v3';
 const CACHE_NAME = `musicsquare-shell-${CACHE_VERSION}`;
 const APP_SHELL = [
   './',
@@ -10,7 +10,11 @@ const APP_SHELL = [
   './icons/icon-192.png',
   './icons/icon-512.png',
   './icons/maskable-512.png',
-  './icons/apple-touch-icon.png'
+  './icons/apple-touch-icon.png',
+  './fonts/baloo2-400-latin.woff2',
+  './fonts/baloo2-600-latin.woff2',
+  './fonts/nunito-400-latin.woff2',
+  './fonts/nunito-600-latin.woff2'
 ];
 
 function toAbsoluteUrl(path) {
