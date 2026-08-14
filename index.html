@@ -812,10 +812,6 @@
       gap:1px;
       font-size:11px;
     }
-    .open-iphone-app-btn {
-      margin-left:8px;
-      white-space:nowrap;
-    }
     .control-secondary > span {
       display:inline-flex;
       align-items:center;
@@ -1327,9 +1323,6 @@
         gap:8px;
         flex-wrap:wrap;
       }
-      .open-iphone-app-btn{
-        margin-left:4px;
-      }
       /* 手机端下方已有完整搜索结果列表，这里隐藏重复的缩略结果。 */
       .search-results-mini{
         display:none;
@@ -1527,7 +1520,6 @@
                 <div class="control-secondary">
                   <span>🔊</span>
                   <input id="volume-slider" class="volume-slider" type="range" min="0" max="1" step="0.01" value="0.8" />
-                  <button id="open-iphone-app-btn" class="btn btn-secondary open-iphone-app-btn ripple-target" data-i18n="openIphoneApp">打开 iPhone App</button>
                 </div>
               </div>
             </div>
@@ -1764,7 +1756,6 @@
         sourceQQ:"QQ音乐",
         sourceKuwo:"酷我",
         installApp:"安装应用",
-        openIphoneApp:"打开 iPhone App",
         networkOnline:"在线",
         networkOffline:"离线",
         appInstalled:"已安装",
@@ -1851,7 +1842,6 @@
         sourceQQ:"QQ Music",
         sourceKuwo:"Kuwo",
         installApp:"Install App",
-        openIphoneApp:"Open iPhone App",
         networkOnline:"Online",
         networkOffline:"Offline",
         appInstalled:"Installed",
@@ -1867,7 +1857,6 @@
     };
 
     const SOURCE_ORDER = ['netease','qq','kuwo','migu'];
-    const IPHONE_APP_SCHEME = 'SenPlayer://';
 
     function getDefaultEnabledSources(){
       return SOURCE_ORDER.reduce((acc,source)=>{
@@ -2127,10 +2116,6 @@
       if(isIOSDevice()){
         showToast(t('toastInstallIOS'));
       }
-    }
-
-    function openIphoneApp(){
-      window.location.href = IPHONE_APP_SCHEME;
     }
 
     async function registerServiceWorker(){
@@ -3785,7 +3770,6 @@
       dom.shortcutModal=$('shortcut-modal');
       dom.shortcutCloseBtn=$('shortcut-close');
       dom.installAppBtn=$('install-app-btn');
-      dom.openIphoneAppBtn=$('open-iphone-app-btn');
       dom.networkChip=$('network-chip');
       dom.appModeChip=$('app-mode-chip');
     }
@@ -3800,10 +3784,6 @@
       document.querySelectorAll('.lang-btn').forEach(btn=>{
         btn.addEventListener('click',()=>setLanguage(btn.dataset.lang));
       });
-
-      if(dom.openIphoneAppBtn){
-        dom.openIphoneAppBtn.addEventListener('click',openIphoneApp);
-      }
 
       dom.searchBtn.addEventListener('click',()=>{
         state.searchKeyword=dom.searchInput.value.trim(); state.noMoreResults=false;
