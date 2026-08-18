@@ -1746,7 +1746,8 @@
         toastUpdateReady:"检测到新版本，重新打开页面后会生效。",
         toastInstallAccepted:"安装请求已提交。",
         toastInstallDismissed:"已取消安装。",
-        toastInstallIOS:"请在 Safari 中点击“分享”，再选择“添加到主屏幕”。",
+        toastInstallIOS:"请先用 HTTPS 打开本站，再在 Safari 中点“分享 → 添加到主屏幕”。HTTP 局域网地址无法离线缓存。",
+        toastOfflineUnavailable:"当前是 HTTP 地址，浏览器不允许缓存页面。没网打开会空白；请改用 HTTPS 后再安装。",
         toastImportInvalidJSON:"导入失败：JSON 格式不正确。",
         toastImportEmpty:"导入内容为空，至少需要一首歌。",
         toastImportNoMatch:"没有匹配到可导入的歌曲。",
@@ -1832,7 +1833,8 @@
         toastUpdateReady:"A new version is ready and will apply next time you open the page.",
         toastInstallAccepted:"Install request accepted.",
         toastInstallDismissed:"Install canceled.",
-        toastInstallIOS:"In Safari, tap Share and then Add to Home Screen.",
+        toastInstallIOS:"Open this site over HTTPS first, then in Safari tap Share → Add to Home Screen. HTTP LAN URLs cannot cache offline.",
+        toastOfflineUnavailable:"This page is on HTTP, so the browser cannot cache it. Offline launches will be blank; install again from HTTPS.",
         toastImportInvalidJSON:"Import failed: invalid JSON format.",
         toastImportEmpty:"Nothing to import. Add at least one song.",
         toastImportNoMatch:"No matching tracks were found for import.",
@@ -2114,18 +2116,25 @@
       }
 
       if(isIOSDevice()){
-        showToast(t('toastInstallIOS'));
+        showToast(t(canUseServiceWorker() ? 'toastInstallIOS' : 'toastOfflineUnavailable'));
       }
     }
 
-    async function registerServiceWorker(){
-      if(typeof navigator==='undefined' || !('serviceWorker' in navigator)) return;
-      // http + 局域网 IP 不是 secure context，注册容易挂起/行为异常，仅 https 或本机启用
+    function canUseServiceWorker(){
+      if(typeof navigator==='undefined' || !('serviceWorker' in navigator)) return false;
       const host=location.hostname;
       const isLocal=host==='localhost'||host==='127.0.0.1'||host==='[::1]';
-      if(!window.isSecureContext && !isLocal) return;
+      // http + 局域网 IP 不是 secure context，浏览器禁止注册 Service Worker
+      return window.isSecureContext || isLocal;
+    }
+
+    async function registerServiceWorker(){
+      if(!canUseServiceWorker()){
+        showToast(t('toastOfflineUnavailable'));
+        return;
+      }
       try{
-        const registration = await navigator.serviceWorker.register('./service-worker.js');
+        const registration = await navigator.serviceWorker.register('./service-worker.js', { updateViaCache:'none' });
         if(registration.waiting){
           showToast(t('toastUpdateReady'));
         }
@@ -2135,9 +2144,18 @@
           nextWorker.addEventListener('statechange',()=>{
             if(nextWorker.state!=='installed') return;
             if(navigator.serviceWorker.controller) showToast(t('toastUpdateReady'));
-            else showToast(t('toastOfflineReady'));
           });
         });
+        await navigator.serviceWorker.ready;
+        const shell = await caches.match(new URL('./index.html', location.href), { ignoreSearch:true });
+        if(shell){
+          try{
+            if(!sessionStorage.getItem('ms-offline-ready')){
+              sessionStorage.setItem('ms-offline-ready','1');
+              showToast(t('toastOfflineReady'));
+            }
+          }catch(e){}
+        }
       }catch(error){
         console.warn('service worker registration failed', error);
       }
